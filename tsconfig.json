@@ -8,11 +8,15 @@
     "noImplicitAny": true,
     "sourceMap": true,
     "baseUrl": ".",
+    "jsx": "react-jsx",
     "outDir": "dist",
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "paths": {
-      "*": ["node_modules/*"]
+      "*": ["node_modules/*"],
+      "main/*": ["src/main/*"],
+      "ui/*": ["src/ui/*"],
+      "shared/*": ["src/shared/*"]
     }
   },
   "include": ["src/**/*"]

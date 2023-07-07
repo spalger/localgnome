@@ -4,6 +4,11 @@
     "es6": true,
     "node": true
   },
+  "import/resolver": {
+    "webpack": {
+      "config": "webpack.main.config.ts"
+    }
+  },
   "extends": [
     "eslint:recommended",
     "plugin:@typescript-eslint/eslint-recommended",
