@@ -12,7 +12,9 @@ export type IpcState<N extends IpcMethodName> = ObservableState<
 
 export function useIpc<N extends IpcMethodName>(
   method: N,
-  arg: IpcMethodArg<N>,
+  arg: IpcMethodArg<N>
 ): IpcState<N> {
-  return useObservable(() => ipc(method, arg), [method, JSON.stringify(arg)]);
+  return useObservable(() => {
+    return ipc(method, arg);
+  }, [method, JSON.stringify(arg)]);
 }

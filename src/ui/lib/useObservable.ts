@@ -20,7 +20,7 @@ export type ObservableState<T> =
 
 export function useObservable<T>(
   get: () => Rx.Observable<T>,
-  deps: any[],
+  deps: any[]
 ): ObservableState<T> {
   const observable = React.useMemo(get, deps);
   const [state, setState] = React.useState<ObservableState<T>>({
@@ -49,7 +49,7 @@ export function useObservable<T>(
         setState((state) => {
           if (state.type !== "next") {
             throw new Error(
-              "Unable to `useObservable()` that completes without producing any values",
+              "Unable to `useObservable()` that completes without producing any values"
             );
           }
 

@@ -1,12 +1,10 @@
-import { randomUUID } from "crypto";
 import { ipcMain } from "electron";
 
 import * as Rx from "rxjs";
-import { z } from "zod";
 
+import { toError } from "shared/errors";
 import { IpcMethods, IpcMethodMap } from "shared/IpcMethods";
 import { IpcHandlers } from "./ipc_handlers";
-import { RpcObservableState } from "shared/RpcObservable";
 
 function isValidIpcMethod(name: string): name is keyof IpcMethodMap {
   return !!(name in IpcMethods);
@@ -15,11 +13,7 @@ function isValidIpcMethod(name: string): name is keyof IpcMethodMap {
 export async function initIpcRouter() {
   const subscriptions = new Map<string, Rx.Subscription | null>();
 
-  ipcMain.handle(`$:unsub`, (_, id) => {
-    if (typeof id !== "string") {
-      throw new Error(`invalid subscription id, expected a string, got ${id}`);
-    }
-
+  function unsub(id: string) {
     const subscription = subscriptions.get(id);
     if (subscription === null) {
       return;
@@ -32,6 +26,14 @@ export async function initIpcRouter() {
 
     subscription.unsubscribe();
     subscriptions.set(id, null);
+  }
+
+  ipcMain.handle(`$:unsub`, (_, id) => {
+    if (typeof id !== "string") {
+      throw new Error(`invalid subscription id, expected a string, got ${id}`);
+    }
+
+    unsub(id);
   });
 
   for (const [name, handler] of Object.entries(IpcHandlers)) {
@@ -40,11 +42,13 @@ export async function initIpcRouter() {
     }
 
     const schema = IpcMethods[name];
-
-    ipcMain.handle(name, (event, param) => {
+    ipcMain.handle(name, (event, param, id) => {
       const sender = event.sender;
       const arg = schema.arg.parse(param);
-      const id = randomUUID();
+
+      if (subscriptions.get(id)) {
+        throw new Error("unable to reuse request uuid");
+      }
 
       subscriptions.set(
         id,
@@ -57,26 +61,30 @@ export async function initIpcRouter() {
                 console.error("invalid IPC route return value", error);
                 process.exit(1);
               }
+            }),
+            Rx.materialize(),
+            Rx.map((notif) => {
+              if (notif.kind === "E") {
+                const e = toError(notif.error);
+                return {
+                  ...notif,
+                  error: {
+                    message: e.message,
+                    name: e.name,
+                    stack: e.stack,
+                  },
+                };
+              }
+
+              return notif;
             })
           )
-          .subscribe({
-            next: (value) => {
-              sender.send(`$:${id}`, {
-                type: "next",
-                value: value,
-              } satisfies RpcObservableState<z.infer<typeof schema.result>>);
-            },
-            error: (error) => {
-              sender.send(`$:${id}`, {
-                type: "error",
-                error,
-              } satisfies RpcObservableState<z.infer<typeof schema.result>>);
-            },
-            complete: () => {
-              sender.send(`$:${id}`, {
-                type: "complete",
-              } satisfies RpcObservableState<z.infer<typeof schema.result>>);
-            },
+          .subscribe((value) => {
+            if (sender.isDestroyed() && subscriptions.has(id)) {
+              unsub(id);
+            } else {
+              sender.send(`$:${id}`, value);
+            }
           })
       );
 
