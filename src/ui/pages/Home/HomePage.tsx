@@ -16,11 +16,19 @@ export const HomePage: React.FC = () => {
   return (
     <div className="m-2">
       <h1 className="text-3xl mb-2">Repos</h1>
-      <ul>
-        {state.latest.map((repo) => (
-          <li key={repo.name}>{repo.name}</li>
-        ))}
-      </ul>
+      {state.latest.scanning && <p>scanning repos...</p>}
+      {state.latest.error && (
+        <p className="bg-red-700 text-white">
+          Unable to read repos: {state.latest.error}
+        </p>
+      )}
+      {state.latest.repoNames && (
+        <ul>
+          {state.latest.repoNames.map((name) => (
+            <li key={name}>{name}</li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 };

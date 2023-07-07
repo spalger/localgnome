@@ -9,11 +9,11 @@ function defineIpcMethods<
 export const IpcMethods = defineIpcMethods({
   "repo list": {
     arg: z.undefined(),
-    result: z.array(
-      z.object({
-        name: z.string(),
-      })
-    ),
+    result: z.object({
+      scanning: z.boolean(),
+      error: z.string().optional(),
+      repoNames: z.array(z.string()).optional(),
+    }),
   },
 });
 

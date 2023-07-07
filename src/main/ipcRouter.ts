@@ -5,12 +5,15 @@ import * as Rx from "rxjs";
 import { toError } from "shared/errors";
 import { IpcMethods, IpcMethodMap } from "shared/IpcMethods";
 import { IpcHandlers } from "./ipc_handlers";
+import type { HandlerContext } from "./ipc_handlers/types";
+import { Config } from "./config";
 
 function isValidIpcMethod(name: string): name is keyof IpcMethodMap {
   return !!(name in IpcMethods);
 }
 
-export async function initIpcRouter() {
+export async function initIpcRouter(config: Config) {
+  const ctx: HandlerContext = { config };
   const subscriptions = new Map<string, Rx.Subscription | null>();
 
   function unsub(id: string) {
@@ -52,7 +55,7 @@ export async function initIpcRouter() {
 
       subscriptions.set(
         id,
-        Rx.defer(() => handler(arg))
+        Rx.defer(() => handler(ctx, arg))
           .pipe(
             Rx.map((value): any => {
               try {

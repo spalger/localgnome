@@ -16,9 +16,9 @@ export const mainConfig: Configuration = {
   resolve: {
     extensions: [".js", ".ts", ".jsx", ".tsx", ".css", ".json"],
     alias: {
-      ui: Path.resolve(__dirname, "src/ui"),
-      main: Path.resolve(__dirname, "src/ui"),
+      main: Path.resolve(__dirname, "src/main"),
       shared: Path.resolve(__dirname, "src/shared"),
+      static: Path.resolve(__dirname, "src/static"),
     },
   },
 };

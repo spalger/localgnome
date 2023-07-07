@@ -1,27 +1,48 @@
+import Fs from "fs";
+
 import * as Rx from "rxjs";
 import { z } from "zod";
 
+import { toError } from "shared/errors";
 import { Handler } from "./types";
 
 import { IpcMethods } from "shared/IpcMethods";
 
-type Repo = z.infer<(typeof IpcMethods)["repo list"]["result"]>[0];
+const dirEnts$ = Rx.bindNodeCallback(Fs.readdir);
 
-export const RepoList: Handler<"repo list"> = () => {
-  const repos: Repo[] = [
-    { name: "repo 1" },
-    { name: "repo 2" },
-    { name: "repo 3" },
-    { name: "repo 4" },
-    { name: "repo 5" },
-    { name: "repo 6" },
-    { name: "repo 7" },
-    { name: "repo 8" },
-    { name: "repo 9" },
-    { name: "repo 10" },
-    { name: "repo 11" },
-    { name: "repo 12" },
-  ];
+type State = z.infer<(typeof IpcMethods)["repo list"]["result"]>;
 
-  return Rx.of(repos);
+export const RepoList: Handler<"repo list"> = ({ config }) => {
+  return config.get$("reposDir").pipe(
+    Rx.mergeMap((reposDir) => {
+      if (!reposDir) {
+        return Rx.of({
+          scanning: false,
+          error: "Please define the location of your metronome repos",
+        });
+      }
+
+      return Rx.concat(
+        Rx.of(<State>{
+          scanning: true,
+        }),
+        dirEnts$(reposDir, { withFileTypes: true }).pipe(
+          Rx.map(
+            (dirEnts): State => ({
+              scanning: false,
+              repoNames: dirEnts
+                .filter((ent) => ent.isDirectory())
+                .map((ent) => ent.name),
+            })
+          ),
+          Rx.catchError((error) =>
+            Rx.of(<State>{
+              scanning: false,
+              error: toError(error).message,
+            })
+          )
+        )
+      );
+    })
+  );
 };
