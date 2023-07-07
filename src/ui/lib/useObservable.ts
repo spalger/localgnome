@@ -3,6 +3,7 @@ import * as Rx from "rxjs";
 
 import { toError } from "shared/errors";
 
+export type ObsGetter<T> = () => Rx.Observable<T>;
 export type ObservableState<T> =
   | { type: "init" }
   | {
@@ -18,53 +19,104 @@ export type ObservableState<T> =
       error: Error;
     };
 
-export function useObservable<T>(
-  get: () => Rx.Observable<T>,
-  deps: any[]
-): ObservableState<T> {
-  const observable = React.useMemo(get, deps);
-  const [state, setState] = React.useState<ObservableState<T>>({
+type ObsSub<T> = {
+  obs: Rx.Observable<T>;
+  latest$: Rx.BehaviorSubject<ObservableState<T>>;
+  subscription: Rx.Subscription;
+  inital: ObservableState<T>;
+};
+
+function doSyncSubscribe<T>(obs: Rx.Observable<T>): ObsSub<T> {
+  const latest$ = new Rx.BehaviorSubject<ObservableState<T>>({
     type: "init",
   });
+  const subscription = obs.subscribe({
+    next(value) {
+      latest$.next({
+        type: "next",
+        latest: value,
+      });
+    },
+    error(error) {
+      latest$.next({
+        type: "error",
+        error: toError(error),
+      });
+    },
+    complete() {
+      const prev = latest$.getValue();
+      if (prev.type !== "next") {
+        latest$.next({
+          type: "error",
+          error: new Error(
+            "observable completed without producing a single value"
+          ),
+        });
+      } else {
+        latest$.next({
+          type: "complete",
+          latest: prev.latest,
+        });
+      }
+    },
+  });
+
+  return {
+    obs,
+    latest$,
+    subscription,
+    inital: latest$.getValue(),
+  };
+}
+
+export function useObservable<T>(
+  get: ObsGetter<T>,
+  deps: React.DependencyList
+): ObservableState<T> {
+  const observable = React.useMemo(get, deps);
+  const sub = React.useRef<ObsSub<T>>();
+
+  if (sub.current && sub.current.obs !== observable) {
+    sub.current.subscription.unsubscribe();
+    sub.current = undefined;
+  }
+
+  if (!sub.current) {
+    sub.current = doSyncSubscribe(observable);
+  }
+
+  const [state, setState] = React.useState<ObservableState<T>>(
+    sub.current.inital
+  );
 
   React.useEffect(() => {
-    if (state.type !== "init") {
-      setState({ type: "init" });
+    if (!sub.current) {
+      return;
     }
 
-    const subscription = observable.subscribe({
-      next(value) {
-        setState({
-          type: "next",
-          latest: value,
-        });
-      },
-      error(error) {
-        setState({
-          type: "error",
-          error: toError(error),
-        });
-      },
-      complete() {
-        setState((state) => {
-          if (state.type !== "next") {
-            throw new Error(
-              "Unable to `useObservable()` that completes without producing any values"
-            );
-          }
-
-          return {
-            type: "complete",
-            latest: state.latest,
-          };
-        });
-      },
+    const stateSub = sub.current.latest$.subscribe((update) => {
+      setState(update);
     });
 
     return () => {
-      subscription.unsubscribe();
+      stateSub.unsubscribe();
     };
-  }, [observable]);
+  }, [sub.current]);
 
   return state;
+}
+
+export function useLatest<T>(get: ObsGetter<T>, deps: React.DependencyList) {
+  const state = useObservable(get, deps);
+  if (state.type === "error") {
+    throw state.error;
+  }
+
+  if (state.type === "init") {
+    throw new Error(
+      "observable must produce a value synchronously, do you want `.pipe(Rx.startWith())`?"
+    );
+  }
+
+  return state.latest;
 }
