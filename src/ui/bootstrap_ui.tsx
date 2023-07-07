@@ -11,7 +11,6 @@ if (!div) {
   throw new Error("missing application root div");
 }
 
-// Render your React component instead
 createRoot(div).render(
-  <RouterProvider router={router} fallbackElement={<FullPageLoading />} />,
+  <RouterProvider router={router} fallbackElement={<FullPageLoading />} />
 );

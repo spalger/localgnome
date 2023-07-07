@@ -1,15 +1,13 @@
 import React from "react";
-import * as Rx from "rxjs";
 
 import { useIpc } from "ui/lib/useIpc";
-import { useLatest } from "ui/lib/useObservable";
-import { useSignal } from "ui/lib/useSignal";
+import { useCounter } from "ui/lib/useCounter";
 
 export const HomePage: React.FC = () => {
-  const [newStart, trigger$] = useSignal();
-  const countingUpFrom = useLatest(
-    () => trigger$.pipe(Rx.map(() => Math.round(Math.random() * 1000))),
-    []
+  const [i, reset] = useCounter();
+  const countingUpFrom = React.useMemo(
+    () => Math.round(Math.random() * 1000),
+    [i]
   );
 
   const state = useIpc("counter", {
@@ -21,19 +19,23 @@ export const HomePage: React.FC = () => {
   }
 
   return (
-    <>
-      <h1>Counter</h1>
-      <p>
-        Counting up from {countingUpFrom}{" "}
-        <button onClick={newStart}>updt</button>
-      </p>
-      <p>
+    <div className="m-2">
+      <h1 className="text-3xl mb-2">Counter</h1>
+      <p className="mb-2">Counting up from {countingUpFrom}</p>
+      <p className="mb-2">
         {state.type === "init" ? (
           "Connecting to the backend..."
         ) : (
           <>Value: {state.latest}</>
         )}
       </p>
-    </>
+
+      <button
+        onClick={reset}
+        className="border border-white p-2 px-4 rounded-md cursor-pointer hover:text-white hover:shadow-lg hover:shadow-fuchsia-500"
+      >
+        updt
+      </button>
+    </div>
   );
 };
