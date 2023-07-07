@@ -1,17 +1,19 @@
 import { z } from "zod";
 
 function defineIpcMethods<
-  K extends Record<string, { arg: z.Schema; result: z.Schema }>,
+  K extends Record<string, { arg: z.Schema; result: z.Schema }>
 >(methods: K) {
   return methods;
 }
 
 export const IpcMethods = defineIpcMethods({
-  counter: {
-    arg: z.object({
-      startFrom: z.number(),
-    }),
-    result: z.number(),
+  "repo list": {
+    arg: z.undefined(),
+    result: z.array(
+      z.object({
+        name: z.string(),
+      })
+    ),
   },
 });
 

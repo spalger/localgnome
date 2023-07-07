@@ -1,10 +1,10 @@
 import { IpcMethodMap } from "shared/IpcMethods";
 
 import { Handler } from "./types";
-import { Counter } from "./counter";
+import { RepoList } from "./repo list";
 
 export const IpcHandlers: {
   [K in keyof IpcMethodMap]: Handler<K>;
 } = {
-  counter: Counter,
+  "repo list": RepoList,
 };

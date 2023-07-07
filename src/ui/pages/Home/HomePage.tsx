@@ -1,41 +1,26 @@
 import React from "react";
 
 import { useIpc } from "ui/lib/useIpc";
-import { useCounter } from "ui/lib/useCounter";
 
 export const HomePage: React.FC = () => {
-  const [i, reset] = useCounter();
-  const countingUpFrom = React.useMemo(
-    () => Math.round(Math.random() * 1000),
-    [i]
-  );
-
-  const state = useIpc("counter", {
-    startFrom: countingUpFrom,
-  });
+  const state = useIpc("repo list", undefined);
 
   if (state.type === "error") {
     throw state.error;
   }
 
+  if (state.type === "init") {
+    return null;
+  }
+
   return (
     <div className="m-2">
-      <h1 className="text-3xl mb-2">Counter</h1>
-      <p className="mb-2">Counting up from {countingUpFrom}</p>
-      <p className="mb-2">
-        {state.type === "init" ? (
-          "Connecting to the backend..."
-        ) : (
-          <>Value: {state.latest}</>
-        )}
-      </p>
-
-      <button
-        onClick={reset}
-        className="border border-white p-2 px-4 rounded-md cursor-pointer hover:text-white hover:shadow-lg hover:shadow-fuchsia-500"
-      >
-        updt
-      </button>
+      <h1 className="text-3xl mb-2">Repos</h1>
+      <ul>
+        {state.latest.map((repo) => (
+          <li key={repo.name}>{repo.name}</li>
+        ))}
+      </ul>
     </div>
   );
 };
