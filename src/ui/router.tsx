@@ -5,6 +5,7 @@ import { RootErrorBoundary } from "./layout/Root/RootErrorBoundary";
 
 import { HomePage } from "./pages/Home/HomePage";
 import { NotFoundPage } from "./pages/NotFound/NotFoundPage";
+import { SettingsPage } from "./pages/Settings/SettingsPage";
 
 export const router = createHashRouter(
   [
@@ -19,6 +20,10 @@ export const router = createHashRouter(
               element: <HomePage />,
             },
             {
+              path: "settings",
+              element: <SettingsPage />,
+            },
+            {
               path: "*",
               element: <NotFoundPage />,
             },
@@ -31,5 +36,5 @@ export const router = createHashRouter(
     future: {
       v7_normalizeFormMethod: true,
     },
-  },
+  }
 );

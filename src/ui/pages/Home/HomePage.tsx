@@ -1,9 +1,9 @@
 import React from "react";
 
-import { useIpc } from "ui/lib/useIpc";
+import { useIpcSub } from "ui/lib/useIpcSub";
 
 export const HomePage: React.FC = () => {
-  const state = useIpc("repo list", undefined);
+  const state = useIpcSub("repo list", undefined);
 
   if (state.type === "error") {
     throw state.error;

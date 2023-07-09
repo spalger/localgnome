@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ConfigSchema } from "./configSchema";
 
 function defineIpcMethods<
   K extends Record<string, { arg: z.Schema; result: z.Schema }>
@@ -14,6 +15,14 @@ export const IpcMethods = defineIpcMethods({
       error: z.string().optional(),
       repoNames: z.array(z.string()).optional(),
     }),
+  },
+  "config:read": {
+    arg: z.undefined(),
+    result: ConfigSchema,
+  },
+  "config:update": {
+    arg: ConfigSchema.partial(),
+    result: ConfigSchema,
   },
 });
 
