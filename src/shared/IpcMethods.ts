@@ -13,7 +13,18 @@ export const IpcMethods = defineIpcMethods({
     result: z.object({
       scanning: z.boolean(),
       error: z.string().optional(),
-      repoNames: z.array(z.string()).optional(),
+      repos: z
+        .array(
+          z.object({
+            path: z.string(),
+            name: z.string(),
+            error: z.string().optional(),
+            currentBranch: z.string().optional(),
+            upstreamRemoteName: z.string().optional(),
+            commitsBehindUpstream: z.number().optional(),
+          })
+        )
+        .optional(),
     }),
   },
   "config:read": {
