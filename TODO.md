@@ -1,6 +1,8 @@
-1. metronome dir config + UI
-2. scan dir for repos
-3. repo info
-   - current branch
-   - remotes
-   - status/change info
+- [x]: Config dir
+- [x]: Scan dir for repos
+- [x]: Collect info about repos
+- [x]: Allow switching to `main` branch and pulling latest changes from main into branch
+- [x]: When switching or pulling, support automatic handling of local changes
+- [ ]: improve watching, `commits behind upstream` isn't very accurate with time
+- [ ]: support refreshing data manually
+- [ ]: when a branch is ahead of main, it renders as "behind", expose this info correctly
