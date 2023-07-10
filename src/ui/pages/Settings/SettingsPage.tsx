@@ -8,6 +8,7 @@ import { useToaster } from "ui/lib/Toaster";
 
 export const SettingsPage: React.FC = () => {
   const settings = useIpcFirst("config:read", undefined);
+  const appInfo = useIpcFirst("app:info", undefined);
   const [updateReq, update] = useIpcCall("config:update");
   const toaster = useToaster();
 
@@ -42,10 +43,20 @@ export const SettingsPage: React.FC = () => {
   };
 
   return (
-    <SettingsForm
-      settings={settings.latest}
-      saving={updateReq.loading}
-      onSubmit={onSubmit}
-    />
+    <>
+      <SettingsForm
+        settings={settings.latest}
+        saving={updateReq.loading}
+        onSubmit={onSubmit}
+      />
+      {"latest" in appInfo && (
+        <p>
+          This is localgnome version {appInfo.latest.version}
+          {!appInfo.latest.distributable ? " (dev)" : ""}. For help please file
+          an issue on <a href="https://github.com/spalger/localgnome">github</a>
+          .
+        </p>
+      )}
+    </>
   );
 };

@@ -100,6 +100,13 @@ export const IpcMethods = defineIpcMethods({
       }),
     ]),
   },
+  "app:info": {
+    arg: z.undefined(),
+    result: z.object({
+      version: z.string(),
+      distributable: z.boolean(),
+    }),
+  },
 });
 
 export type IpcMethodMap = typeof IpcMethods;

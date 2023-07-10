@@ -9,6 +9,7 @@ import type { HandlerContext } from "./ipc_handlers/types";
 import { Handler } from "./ipc_handlers/types";
 import { ConfigReadHandler, ConfigUpdateHandler } from "./ipc_handlers/config";
 import { RepoListHandler } from "./ipc_handlers/repo list";
+import { AppInfoHandler } from "./ipc_handlers/app";
 import {
   RepoSwitchToMainHandler,
   RepoPullMainHandler,
@@ -20,6 +21,7 @@ export async function initIpcRouter(ctx: HandlerContext) {
   const subscriptions = new Map<string, Rx.Subscription | null>();
 
   // setup each IPC route handler here
+  setup("app:info", AppInfoHandler);
   setup("config:read", ConfigReadHandler);
   setup("config:update", ConfigUpdateHandler);
   setup("repo list", RepoListHandler);
