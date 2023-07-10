@@ -36,6 +36,19 @@ const config: ForgeConfig = {
       },
     }),
   ],
+  publishers: [
+    {
+      name: "@electron-forge/publisher-github",
+      config: {
+        repository: {
+          owner: "spalger",
+          name: "localgnome",
+        },
+        prerelease: false,
+        draft: true,
+      },
+    },
+  ],
 };
 
 export default config;
