@@ -1,4 +1,5 @@
 import { session, app, BrowserWindow } from "electron";
+import * as Rx from "rxjs";
 
 import { initIpcRouter } from "main/ipcRouter";
 import { Config } from "main/config";
@@ -15,18 +16,43 @@ if (require("electron-squirrel-startup")) {
   app.quit();
 }
 
-const createWindow = (): void => {
-  // Create the browser window.
-  const mainWindow = new BrowserWindow({
-    webPreferences: {
-      preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
-      nodeIntegration: true,
-      contextIsolation: false,
-    },
-  });
+const createWindow = (config: Config): void => {
+  Rx.firstValueFrom(config.get$("windowBounds")).then((oldBounds) => {
+    // Create the browser window.
+    const mainWindow = new BrowserWindow({
+      height: oldBounds?.height || 1000,
+      width: oldBounds?.width || 1200,
+      x: oldBounds?.x,
+      y: oldBounds?.y,
+      webPreferences: {
+        preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
+        nodeIntegration: true,
+        contextIsolation: false,
+      },
+    });
 
-  // and load the index.html of the app.
-  mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
+    // auto persist window bounds to config
+    Rx.merge(
+      Rx.fromEvent(mainWindow, "resized"),
+      Rx.fromEvent(mainWindow, "moved")
+    )
+      .pipe(
+        Rx.debounceTime(1000),
+        Rx.mergeMap(() =>
+          config.update$({
+            windowBounds: mainWindow.getBounds(),
+          })
+        ),
+        Rx.catchError((error, source$) => {
+          console.error("Failed to persist window bounds", error);
+          return source$;
+        })
+      )
+      .subscribe();
+
+    // and load the index.html of the app.
+    mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
+  });
 };
 
 async function init() {
@@ -55,11 +81,9 @@ async function init() {
     // On OS X it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
     if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
+      createWindow(config);
     }
   });
-
-  createWindow();
 
   const config = new Config();
   const repos = new RepoCollection(config);
@@ -68,6 +92,8 @@ async function init() {
     config,
     repos,
   });
+
+  createWindow(config);
 }
 
 init().catch((error) => {
