@@ -1,5 +1,6 @@
 import { session, app, BrowserWindow } from "electron";
 import * as Rx from "rxjs";
+import autoUpdater from "update-electron-app";
 
 import { initIpcRouter } from "main/ipcRouter";
 import { Config } from "main/config";
@@ -51,6 +52,10 @@ const createWindow = (config: Config): void => {
 };
 
 async function init() {
+  autoUpdater({
+    repo: "spalger/localgnome",
+  });
+
   await app.whenReady();
 
   // ensure that CSP is set to the most restrictive value

@@ -1,8 +1,9 @@
 {
   "name": "localgnome",
   "productName": "localgnome",
+  "private": true,
   "version": "0.0.1",
-  "description": "My Electron application description",
+  "description": "An electron app for managing local git repositories",
   "main": ".webpack/main",
   "scripts": {
     "start": "electron-forge start",
@@ -16,6 +17,10 @@
   "author": {
     "name": "spalger",
     "email": "spalger@users.noreply.github.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/spalger/localgnome.git"
   },
   "license": "MIT",
   "devDependencies": {
@@ -57,6 +62,7 @@
     "react": "^18.2.0",
     "react-hook-form": "^7.45.1",
     "simple-git": "3.17.0",
+    "update-electron-app": "^2.0.1",
     "zod": "^3.21.4"
   }
 }
