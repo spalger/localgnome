@@ -74,7 +74,7 @@ export class Repo {
 
     const commitsBehindUpstream$ = Rx.merge(
       // clear the current value when main is pulled
-      this.pulledMain$.pipe(Rx.startWith(undefined)),
+      this.pulledMain$.pipe(Rx.map(() => 0)),
 
       Rx.combineLatest([
         currentBranch$,
