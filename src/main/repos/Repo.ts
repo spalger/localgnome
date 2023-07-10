@@ -199,4 +199,13 @@ export class Repo {
     await this.git.pull(upstream, "main");
     this.pulledMain$.next();
   }
+
+  async saveChanges() {
+    await this.git.raw(["add", "-A"]);
+    await this.git.raw(["commit", "-m", "save"]);
+  }
+
+  async stashChanges() {
+    await this.git.raw(["stash", "save", "-u"]);
+  }
 }

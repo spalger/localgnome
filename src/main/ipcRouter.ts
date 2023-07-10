@@ -12,6 +12,8 @@ import { RepoListHandler } from "./ipc_handlers/repo list";
 import {
   RepoSwitchToMainHandler,
   RepoPullMainHandler,
+  RepoSaveChangesHandler,
+  RepoStashChangesHandler,
 } from "./ipc_handlers/repo";
 
 export async function initIpcRouter(ctx: HandlerContext) {
@@ -23,6 +25,8 @@ export async function initIpcRouter(ctx: HandlerContext) {
   setup("repo list", RepoListHandler);
   setup("repo:switchToMain", RepoSwitchToMainHandler);
   setup("repo:pullMain", RepoPullMainHandler);
+  setup("repo:saveChanges", RepoSaveChangesHandler);
+  setup("repo:stashChanges", RepoStashChangesHandler);
 
   // add the ability to unsubscribe from an IPC stream
   ipcMain.handle(`$:unsub`, (_, id) => {

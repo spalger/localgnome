@@ -1,15 +1,76 @@
 import React from "react";
 
+import { toError } from "shared/errors";
 import { useIpcSub } from "ui/lib/useIpcSub";
 import { GitStatus } from "./GitStatus";
 import { Spinner } from "ui/components/Spinner";
 import { Button } from "ui/components/Button";
 import { ipcCall } from "ui/lib/ipc";
-import { useToaster } from "ui/lib/Toaster";
+import { useToaster, ToasterService } from "ui/lib/Toaster";
+import { useAlerts, AlertsService } from "ui/lib/Alerts";
+import { RepoSnapshot } from "main/repos/Repo";
+
+async function optionallyDealWithChanges(
+  repo: RepoSnapshot,
+  alerts: AlertsService,
+  toaster: ToasterService
+) {
+  if (!repo.gitStatus?.changedFiles) {
+    return;
+  }
+
+  const result = await alerts.show({
+    message: `There are uncommitted changes in the ${repo.currentBranch} branch, want to commit them before switching to main?`,
+    choices: [
+      {
+        label: "Yes, commit them",
+        value: "commit",
+        primary: true,
+      },
+      {
+        label: "No, stash them",
+        value: "stash",
+      },
+      {
+        label: "No, ignore them",
+        value: "ignore",
+      },
+    ],
+  });
+
+  if (result.type !== "selection") {
+    return;
+  }
+
+  switch (result.choice) {
+    case "commit":
+      await ipcCall("repo:saveChanges", {
+        repoName: repo.name,
+      });
+
+      toaster.add({
+        message: `changes committed with message "save" in repo "${repo.name}"`,
+        type: "success",
+      });
+      break;
+
+    case "stash":
+      await ipcCall("repo:stashChanges", {
+        repoName: repo.name,
+      });
+
+      toaster.add({
+        message: `changes stashed in repo "${repo.name}"`,
+        type: "success",
+      });
+      break;
+  }
+}
 
 export const HomePage: React.FC = () => {
   const state = useIpcSub("repo list", undefined);
   const toaster = useToaster();
+  const alerts = useAlerts();
 
   if (state.type === "error") {
     throw state.error;
@@ -70,20 +131,25 @@ export const HomePage: React.FC = () => {
                       <Button
                         type="button"
                         compact
+                        disabled={!!repo.gitStatus?.conflicts}
                         onClick={() => {
-                          ipcCall("repo:pullMain", repo.name).then(
-                            () =>
+                          optionallyDealWithChanges(repo, alerts, toaster)
+                            .then(async () => {
+                              await ipcCall("repo:pullMain", {
+                                repoName: repo.name,
+                              });
                               toaster.add({
-                                message: `${repo.name} pulled latest changes from main`,
+                                message: `pulled latest changes from main in repo "${repo.name}"`,
                                 type: "success",
-                              }),
-                            (error) => {
+                              });
+                            })
+                            .catch((_) => {
+                              const error = toError(_);
                               toaster.add({
-                                message: `Failed to pull latest changes from main into ${repo.name}: ${error.message}`,
+                                message: `Failed to pull latest changes from main into repo "${repo.name}": ${error.message}`,
                                 type: "error",
                               });
-                            }
-                          );
+                            });
                         }}
                       >
                         update
@@ -93,20 +159,25 @@ export const HomePage: React.FC = () => {
                     <Button
                       type="button"
                       compact
+                      disabled={!!repo.gitStatus?.conflicts}
                       onClick={() => {
-                        ipcCall("repo:switchToMain", repo.name).then(
-                          () =>
+                        optionallyDealWithChanges(repo, alerts, toaster)
+                          .then(async () => {
+                            await ipcCall("repo:switchToMain", {
+                              repoName: repo.name,
+                            });
                             toaster.add({
-                              message: `${repo.name} switched to main`,
+                              message: `switched repo "${repo.name}" to main`,
                               type: "success",
-                            }),
-                          (error) => {
+                            });
+                          })
+                          .catch((_) => {
+                            const error = toError(_);
                             toaster.add({
-                              message: `Failed to switch ${repo.name} to main: ${error.message}`,
+                              message: `Failed to switch repo "${repo.name}" to main: ${error.message}`,
                               type: "error",
                             });
-                          }
-                        );
+                          });
                       }}
                     >
                       switch to main

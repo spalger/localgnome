@@ -1,15 +1,17 @@
 import React from "react";
 import { v4 as uuidV4 } from "uuid";
 
+import { ToasterView } from "./ToasterView";
+
 interface Props extends React.PropsWithChildren {}
 
-interface ToastInput {
+export interface ToastInput {
   message: string;
   type?: "info" | "success" | "warning" | "error";
   duration?: number;
 }
 
-interface Toast {
+export interface Toast {
   id: string;
   paused: boolean;
   message: string;
@@ -20,7 +22,7 @@ interface Toast {
   unpause: () => void;
 }
 
-interface ToasterContextValue {
+export interface ToasterContextValue {
   toasts: Toast[];
   add: (toast: ToastInput) => void;
 }
@@ -112,6 +114,7 @@ export const ToasterContextProvider: React.FC<Props> = (props) => {
   return (
     <ToasterContext.Provider value={ctxValue}>
       {props.children}
+      <ToasterView />
     </ToasterContext.Provider>
   );
 };

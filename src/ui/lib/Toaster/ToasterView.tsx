@@ -24,7 +24,7 @@ export const ToasterView: React.FC = () => {
   }
 
   return createPortal(
-    <div className="fixed bottom-0 right-0 p-4">
+    <div className="fixed bottom-0 right-0 p-4 flex flex-col gap-2 w-96">
       {toasts.map((toast) => (
         <div
           key={toast.id}

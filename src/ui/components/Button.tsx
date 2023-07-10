@@ -19,7 +19,7 @@ export const Button: React.FC<Props> = (props) => (
       props.compact ? "p-1 text-xs" : "p-2 px-4 font-semibold",
       "hover:bg-indigo-900 hover:shadow-md hover:shadow-fuchsia-500",
       {
-        "bg-indigo-700": props.theme === "primary",
+        "bg-indigo-500": props.theme === "primary",
       }
     )}
   >

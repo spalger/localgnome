@@ -45,7 +45,9 @@ export const IpcMethods = defineIpcMethods({
     result: ConfigSchema,
   },
   "repo:switchToMain": {
-    arg: z.string(),
+    arg: z.object({
+      repoName: z.string(),
+    }),
     result: z.union([
       z.object({
         type: z.literal("error"),
@@ -57,7 +59,37 @@ export const IpcMethods = defineIpcMethods({
     ]),
   },
   "repo:pullMain": {
-    arg: z.string(),
+    arg: z.object({
+      repoName: z.string(),
+    }),
+    result: z.union([
+      z.object({
+        type: z.literal("error"),
+        error: z.string(),
+      }),
+      z.object({
+        type: z.literal("success"),
+      }),
+    ]),
+  },
+  "repo:saveChanges": {
+    arg: z.object({
+      repoName: z.string(),
+    }),
+    result: z.union([
+      z.object({
+        type: z.literal("error"),
+        error: z.string(),
+      }),
+      z.object({
+        type: z.literal("success"),
+      }),
+    ]),
+  },
+  "repo:stashChanges": {
+    arg: z.object({
+      repoName: z.string(),
+    }),
     result: z.union([
       z.object({
         type: z.literal("error"),
