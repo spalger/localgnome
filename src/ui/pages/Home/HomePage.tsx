@@ -4,9 +4,12 @@ import { useIpcSub } from "ui/lib/useIpcSub";
 import { GitStatus } from "./GitStatus";
 import { Spinner } from "ui/components/Spinner";
 import { Button } from "ui/components/Button";
+import { ipcCall } from "ui/lib/ipc";
+import { useToaster } from "ui/lib/Toaster";
 
 export const HomePage: React.FC = () => {
   const state = useIpcSub("repo list", undefined);
+  const toaster = useToaster();
 
   if (state.type === "error") {
     throw state.error;
@@ -19,13 +22,12 @@ export const HomePage: React.FC = () => {
   return (
     <div className="m-2">
       <h1 className="text-3xl mb-2">Repos</h1>
-      {state.latest.scanning && <p>scanning repos...</p>}
-      {state.latest.error && (
+      {state.latest.type === "error" && (
         <p className="bg-red-700 text-white">
           Unable to read repos: {state.latest.error}
         </p>
       )}
-      {state.latest.repos && (
+      {state.latest.type === "valid" && (
         <table className="w-full">
           <thead>
             <tr>
@@ -40,7 +42,7 @@ export const HomePage: React.FC = () => {
           <tbody>
             {state.latest.repos.map((repo, i) => (
               <tr
-                key={repo.path}
+                key={repo.name}
                 className={i % 2 ? "bg-slate-900" : "bg-slate-950"}
               >
                 <td>{repo.name}</td>
@@ -64,13 +66,49 @@ export const HomePage: React.FC = () => {
                 )}
                 <td className="w-[200px] h-8 space-x-3">
                   {repo.currentBranch === "main" ? (
-                    repo.commitsBehindUpstream === 0 ? null : (
-                      <Button type="button" compact>
+                    (repo.commitsBehindUpstream ?? 0) === 0 ? null : (
+                      <Button
+                        type="button"
+                        compact
+                        onClick={() => {
+                          ipcCall("repo:pullMain", repo.name).then(
+                            () =>
+                              toaster.add({
+                                message: `${repo.name} pulled latest changes from main`,
+                                type: "success",
+                              }),
+                            (error) => {
+                              toaster.add({
+                                message: `Failed to pull latest changes from main into ${repo.name}: ${error.message}`,
+                                type: "error",
+                              });
+                            }
+                          );
+                        }}
+                      >
                         update
                       </Button>
                     )
                   ) : (
-                    <Button type="button" compact>
+                    <Button
+                      type="button"
+                      compact
+                      onClick={() => {
+                        ipcCall("repo:switchToMain", repo.name).then(
+                          () =>
+                            toaster.add({
+                              message: `${repo.name} switched to main`,
+                              type: "success",
+                            }),
+                          (error) => {
+                            toaster.add({
+                              message: `Failed to switch ${repo.name} to main: ${error.message}`,
+                              type: "error",
+                            });
+                          }
+                        );
+                      }}
+                    >
                       switch to main
                     </Button>
                   )}

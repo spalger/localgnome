@@ -9,6 +9,10 @@ import type { HandlerContext } from "./ipc_handlers/types";
 import { Handler } from "./ipc_handlers/types";
 import { ConfigReadHandler, ConfigUpdateHandler } from "./ipc_handlers/config";
 import { RepoListHandler } from "./ipc_handlers/repo list";
+import {
+  RepoSwitchToMainHandler,
+  RepoPullMainHandler,
+} from "./ipc_handlers/repo";
 
 export async function initIpcRouter(ctx: HandlerContext) {
   const subscriptions = new Map<string, Rx.Subscription | null>();
@@ -17,6 +21,8 @@ export async function initIpcRouter(ctx: HandlerContext) {
   setup("config:read", ConfigReadHandler);
   setup("config:update", ConfigUpdateHandler);
   setup("repo list", RepoListHandler);
+  setup("repo:switchToMain", RepoSwitchToMainHandler);
+  setup("repo:pullMain", RepoPullMainHandler);
 
   // add the ability to unsubscribe from an IPC stream
   ipcMain.handle(`$:unsub`, (_, id) => {

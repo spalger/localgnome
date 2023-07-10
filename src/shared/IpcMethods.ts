@@ -12,9 +12,11 @@ export const IpcMethods = defineIpcMethods({
     arg: z.undefined(),
     result: z.union([
       z.object({
+        type: z.literal("error"),
         error: z.string(),
       }),
       z.object({
+        type: z.literal("valid"),
         repos: z.array(
           z.object({
             path: z.string(),
@@ -41,6 +43,30 @@ export const IpcMethods = defineIpcMethods({
   "config:update": {
     arg: ConfigSchema.partial(),
     result: ConfigSchema,
+  },
+  "repo:switchToMain": {
+    arg: z.string(),
+    result: z.union([
+      z.object({
+        type: z.literal("error"),
+        error: z.string(),
+      }),
+      z.object({
+        type: z.literal("success"),
+      }),
+    ]),
+  },
+  "repo:pullMain": {
+    arg: z.string(),
+    result: z.union([
+      z.object({
+        type: z.literal("error"),
+        error: z.string(),
+      }),
+      z.object({
+        type: z.literal("success"),
+      }),
+    ]),
   },
 });
 

@@ -42,6 +42,12 @@ function makePauseSetter(
 
       const newToasts = [...toasts];
       newToasts[selfIndex].paused = paused;
+      if (paused) {
+        newToasts[selfIndex].duration -=
+          Date.now() - newToasts[selfIndex].durationFrom;
+      } else {
+        newToasts[selfIndex].durationFrom = Date.now();
+      }
       return newToasts;
     });
   };
@@ -95,7 +101,7 @@ export const ToasterContextProvider: React.FC<Props> = (props) => {
             duration: input.duration ?? 5000,
             durationFrom: Date.now(),
             pause: makePauseSetter(setToasts, id, true),
-            unpause: makePauseSetter(setToasts, id, true),
+            unpause: makePauseSetter(setToasts, id, false),
           },
         ]);
       },

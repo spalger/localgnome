@@ -1,4 +1,3 @@
-import Path from "path";
 import Fs from "fs";
 
 import * as Rx from "rxjs";
@@ -72,18 +71,17 @@ export class RepoCollection {
                         continue;
                       }
 
-                      const path = Path.resolve(reposDir, ent.name);
-                      const existing = prevRepos?.get(path);
+                      const existing = prevRepos?.get(ent.name);
                       if (existing) {
-                        repos.set(path, existing);
+                        repos.set(ent.name, existing);
                       } else {
-                        repos.set(path, new Repo(path, ent.name));
+                        repos.set(ent.name, new Repo(reposDir, ent.name));
                       }
                     }
 
                     if (prevRepos) {
                       for (const repo of prevRepos.values()) {
-                        if (!repos.has(repo.path)) {
+                        if (!repos.has(repo.name)) {
                           repo.close();
                         }
                       }
@@ -104,15 +102,22 @@ export class RepoCollection {
       .subscribe(this.state$);
   }
 
+  get(repoName: string) {
+    const state = this.state$.getValue();
+    return state.type === "valid" ? state.repos.get(repoName) : undefined;
+  }
+
   getReposState(): ReposState {
     const internal = this.state$.getValue();
     if ("error" in internal) {
       return {
+        type: "error",
         error: internal.error,
       };
     }
 
     return {
+      type: "valid",
       repos: Array.from(internal.repos.values()).map((repo) =>
         repo.getSnapshot()
       ),

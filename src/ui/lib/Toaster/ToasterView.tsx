@@ -34,6 +34,8 @@ export const ToasterView: React.FC = () => {
             "bg-yellow-600 text-black": toast.type === "warning",
             "bg-slate-900 text-white": toast.type === "info",
           })}
+          onMouseEnter={() => toast.pause()}
+          onMouseLeave={() => toast.unpause()}
         >
           {toast.message}
         </div>
