@@ -4,10 +4,22 @@ import type { ParsedConfig } from "shared/configSchema";
 import { useIpcFirst } from "ui/lib/useIpcFirst";
 import { useIpcCall } from "ui/lib/useIpcCall";
 import { SettingsForm } from "./SettingsForm";
+import { useToaster } from "ui/lib/Toaster";
 
 export const SettingsPage: React.FC = () => {
   const settings = useIpcFirst("config:read", undefined);
   const [updateReq, update] = useIpcCall("config:update");
+  const toaster = useToaster();
+
+  React.useEffect(() => {
+    if (updateReq.called && updateReq.loading) {
+      toaster.add({
+        message: "Settings saved",
+        duration: 2000,
+        type: "success",
+      });
+    }
+  }, [updateReq.called && updateReq.loading]);
 
   if (settings.type === "error") {
     throw settings.error;

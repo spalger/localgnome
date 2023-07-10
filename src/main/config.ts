@@ -1,7 +1,10 @@
 import Path from "path";
 import Fs from "fs";
+
 import * as Rx from "rxjs";
+
 import { ConfigSchema, ParsedConfig } from "shared/configSchema";
+import { watch$ } from "./lib/watch";
 
 if (!process.env.HOME) {
   throw new Error("missing $HOME env");
@@ -19,22 +22,20 @@ export class Config {
   private readonly updated$ = new Rx.Subject<void>();
 
   constructor() {
-    const refresh$ = new Rx.Subject<void>();
     if (!Fs.existsSync(this.path)) {
       Fs.mkdirSync(Path.dirname(this.path), { recursive: true });
       Fs.writeFileSync(this.path, `{}`);
     }
-    Fs.watchFile(this.path, () => {
-      console.log("config.json change detected");
-      refresh$.next();
-    }).on("error", (error) => {
-      console.log("config.json change watcher errored");
-      refresh$.error(error);
-    });
 
-    this.value$ = refresh$.pipe(
+    const change$ = watch$(this.path).pipe(
+      Rx.tap(() => {
+        console.log("change in config.json detected");
+      })
+    );
+
+    this.value$ = change$.pipe(
       Rx.startWith(null),
-      Rx.debounceTime(3000),
+      Rx.debounceTime(1000),
       Rx.mergeWith(this.updated$),
       Rx.map(() => {
         let raw;

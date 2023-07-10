@@ -1,0 +1,73 @@
+/**
+ * Thank you https://loading.io/css/, converted all px sizes
+ * to em so that the grid scales to fix the font size of the
+ * container
+ */
+.lds-grid {
+  display: inline-block;
+  position: relative;
+  width: 1em;
+  height: 1em;
+}
+.lds-grid div {
+  position: absolute;
+  width: 0.2em;
+  height: 0.2em;
+  border-radius: 50%;
+  background: #fff;
+  animation: lds-grid 1.2s linear infinite;
+}
+.lds-grid div:nth-child(1) {
+  top: 0.1em;
+  left: 0.1em;
+  animation-delay: 0s;
+}
+.lds-grid div:nth-child(2) {
+  top: 0.1em;
+  left: 0.4em;
+  animation-delay: -0.4s;
+}
+.lds-grid div:nth-child(3) {
+  top: 0.1em;
+  left: 0.7em;
+  animation-delay: -0.8s;
+}
+.lds-grid div:nth-child(4) {
+  top: 0.4em;
+  left: 0.1em;
+  animation-delay: -0.4s;
+}
+.lds-grid div:nth-child(5) {
+  top: 0.4em;
+  left: 0.4em;
+  animation-delay: -0.8s;
+}
+.lds-grid div:nth-child(6) {
+  top: 0.4em;
+  left: 0.7em;
+  animation-delay: -1.2s;
+}
+.lds-grid div:nth-child(7) {
+  top: 0.7em;
+  left: 0.1em;
+  animation-delay: -0.8s;
+}
+.lds-grid div:nth-child(8) {
+  top: 0.7em;
+  left: 0.4em;
+  animation-delay: -1.2s;
+}
+.lds-grid div:nth-child(9) {
+  top: 0.7em;
+  left: 0.7em;
+  animation-delay: -1.6s;
+}
+@keyframes lds-grid {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}

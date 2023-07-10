@@ -10,11 +10,12 @@ function defineIpcMethods<
 export const IpcMethods = defineIpcMethods({
   "repo list": {
     arg: z.undefined(),
-    result: z.object({
-      scanning: z.boolean(),
-      error: z.string().optional(),
-      repos: z
-        .array(
+    result: z.union([
+      z.object({
+        error: z.string(),
+      }),
+      z.object({
+        repos: z.array(
           z.object({
             path: z.string(),
             name: z.string(),
@@ -22,10 +23,16 @@ export const IpcMethods = defineIpcMethods({
             currentBranch: z.string().optional(),
             upstreamRemoteName: z.string().optional(),
             commitsBehindUpstream: z.number().optional(),
+            gitStatus: z
+              .object({
+                changedFiles: z.number(),
+                conflicts: z.number(),
+              })
+              .optional(),
           })
-        )
-        .optional(),
-    }),
+        ),
+      }),
+    ]),
   },
   "config:read": {
     arg: z.undefined(),

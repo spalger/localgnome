@@ -1,6 +1,9 @@
 import React from "react";
 
 import { useIpcSub } from "ui/lib/useIpcSub";
+import { GitStatus } from "./GitStatus";
+import { Spinner } from "ui/components/Spinner";
+import { Button } from "ui/components/Button";
 
 export const HomePage: React.FC = () => {
   const state = useIpcSub("repo list", undefined);
@@ -27,6 +30,7 @@ export const HomePage: React.FC = () => {
           <thead>
             <tr>
               <td>Name</td>
+              <td>Status</td>
               <td>Current branch</td>
               <td>Upstream remote</td>
               <td>Commits behind</td>
@@ -34,37 +38,41 @@ export const HomePage: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {state.latest.repos.map((repo) => (
-              <tr key={repo.path}>
+            {state.latest.repos.map((repo, i) => (
+              <tr
+                key={repo.path}
+                className={i % 2 ? "bg-slate-900" : "bg-slate-950"}
+              >
                 <td>{repo.name}</td>
                 {repo.error ? (
-                  <td className="bg-red-700 text-white col-span-3">
+                  <td className="bg-red-700 text-white col-span-4">
                     {repo.error}
                   </td>
                 ) : (
                   <>
-                    <td>{repo.currentBranch}</td>
-                    <td>{repo.upstreamRemoteName}</td>
-                    <td>{repo.commitsBehindUpstream}</td>
+                    <td>
+                      {repo.gitStatus ? (
+                        <GitStatus status={repo.gitStatus} />
+                      ) : (
+                        <Spinner />
+                      )}
+                    </td>
+                    <td>{repo.currentBranch ?? <Spinner />}</td>
+                    <td>{repo.upstreamRemoteName ?? <Spinner />}</td>
+                    <td>{repo.commitsBehindUpstream ?? <Spinner />}</td>
                   </>
                 )}
-                <td className="w-[200px] h-8">
+                <td className="w-[200px] h-8 space-x-3">
                   {repo.currentBranch === "main" ? (
                     repo.commitsBehindUpstream === 0 ? null : (
-                      <button
-                        type="button"
-                        className="bg-slate-900 border p-1 ml-3 text-xs hover:shadow-md hover:shadow-fuchsia-600"
-                      >
+                      <Button type="button" compact>
                         update
-                      </button>
+                      </Button>
                     )
                   ) : (
-                    <button
-                      type="button"
-                      className="bg-slate-900 border p-1 ml-3 text-xs hover:shadow-md hover:shadow-fuchsia-600"
-                    >
+                    <Button type="button" compact>
                       switch to main
-                    </button>
+                    </Button>
                   )}
                 </td>
               </tr>

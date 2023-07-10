@@ -6,6 +6,7 @@ import { ipcCall } from "./ipc";
 
 interface CallState<R extends Zod.Schema> {
   loading: boolean;
+  called: boolean;
   data?: Zod.infer<R>;
   error?: Error;
 }
@@ -15,18 +16,32 @@ export function useIpcCall<
   A extends Zod.Schema = IpcMethodMap[N]["arg"],
   R extends Zod.Schema = IpcMethodMap[N]["result"]
 >(methodName: N): [CallState<R>, (arg: Zod.infer<A>) => void] {
-  const [state, setState] = React.useState<CallState<R>>({ loading: false });
+  const [state, setState] = React.useState<CallState<R>>({
+    called: false,
+    loading: false,
+  });
 
   const call = React.useCallback(
     (arg: Zod.infer<A>) => {
-      setState({ loading: true });
+      setState({
+        called: true,
+        loading: true,
+      });
 
       ipcCall(methodName, arg)
         .then((data) => {
-          setState({ loading: false, data });
+          setState({
+            called: true,
+            loading: false,
+            data,
+          });
         })
         .catch((error) => {
-          setState({ loading: false, error: toError(error) });
+          setState({
+            called: true,
+            loading: false,
+            error: toError(error),
+          });
         });
     },
     [methodName]

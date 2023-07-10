@@ -4,18 +4,32 @@ import * as Rx from "rxjs";
 
 import { toError } from "shared/errors";
 import { IpcMethods, IpcMethodMap } from "shared/IpcMethods";
-import { IpcHandlers } from "./ipc_handlers";
 import type { HandlerContext } from "./ipc_handlers/types";
-import { Config } from "./config";
 
-function isValidIpcMethod(name: string): name is keyof IpcMethodMap {
-  return !!(name in IpcMethods);
-}
+import { Handler } from "./ipc_handlers/types";
+import { ConfigReadHandler, ConfigUpdateHandler } from "./ipc_handlers/config";
+import { RepoListHandler } from "./ipc_handlers/repo list";
 
-export async function initIpcRouter(config: Config) {
-  const ctx: HandlerContext = { config };
+export async function initIpcRouter(ctx: HandlerContext) {
   const subscriptions = new Map<string, Rx.Subscription | null>();
 
+  // setup each IPC route handler here
+  setup("config:read", ConfigReadHandler);
+  setup("config:update", ConfigUpdateHandler);
+  setup("repo list", RepoListHandler);
+
+  // add the ability to unsubscribe from an IPC stream
+  ipcMain.handle(`$:unsub`, (_, id) => {
+    if (typeof id !== "string") {
+      throw new Error(`invalid subscription id, expected a string, got ${id}`);
+    }
+
+    unsub(id);
+  });
+
+  return;
+
+  // helper functions
   function unsub(id: string) {
     const subscription = subscriptions.get(id);
     if (subscription === null) {
@@ -31,21 +45,12 @@ export async function initIpcRouter(config: Config) {
     subscriptions.set(id, null);
   }
 
-  ipcMain.handle(`$:unsub`, (_, id) => {
-    if (typeof id !== "string") {
-      throw new Error(`invalid subscription id, expected a string, got ${id}`);
-    }
-
-    unsub(id);
-  });
-
-  for (const [name, handler] of Object.entries(IpcHandlers)) {
-    if (!isValidIpcMethod(name)) {
-      throw new Error(`invalid ipc handler named ${name}`);
-    }
-
-    const schema = IpcMethods[name];
-    ipcMain.handle(name, (event, param, id) => {
+  function setup<N extends keyof IpcMethodMap>(
+    methodName: N,
+    handler: Handler<N>
+  ) {
+    const schema = IpcMethods[methodName];
+    ipcMain.handle(methodName, (event, param, id) => {
       const sender = event.sender;
       const arg = schema.arg.parse(param);
 
