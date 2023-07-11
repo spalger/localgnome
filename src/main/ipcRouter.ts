@@ -69,6 +69,4 @@ export async function initIpcRouter(ctx: HandlerContext) {
       );
     });
   });
-
-  return;
 }
