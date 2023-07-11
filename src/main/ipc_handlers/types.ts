@@ -14,3 +14,7 @@ export type Handler<N extends keyof IpcMethodMap> = (
   ctx: HandlerContext,
   arg: z.infer<IpcMethodMap[N]["arg"]>
 ) => Rx.ObservableInput<z.infer<IpcMethodMap[N]["result"]>>;
+
+export type Handlers = {
+  [K in keyof IpcMethodMap]: Handler<K>;
+};

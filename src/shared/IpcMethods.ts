@@ -109,6 +109,8 @@ export const IpcMethods = defineIpcMethods({
   },
 });
 
+export const IpcMethodNames = Object.keys(IpcMethods) as (keyof IpcMethodMap)[];
+
 export type IpcMethodMap = typeof IpcMethods;
 export type IpcMethodName = keyof IpcMethodMap;
 export type IpcMethodArg<N extends IpcMethodName> = z.infer<
