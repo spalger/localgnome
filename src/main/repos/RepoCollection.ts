@@ -9,7 +9,7 @@ import { Repo } from "./Repo";
 
 const readdir$ = Rx.bindNodeCallback(Fs.readdir);
 type RepoMap = Map<string, Repo>;
-type ReposState = IpcMethodResult<"repo list">;
+type ReposState = IpcMethodResult<"repos:list">;
 type InternalRepoState =
   | { type: "error"; error: string }
   | { type: "valid"; repos: RepoMap };

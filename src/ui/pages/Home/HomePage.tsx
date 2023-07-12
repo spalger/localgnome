@@ -68,9 +68,44 @@ async function optionallyDealWithChanges(
 }
 
 export const HomePage: React.FC = () => {
-  const state = useIpcSub("repo list", undefined);
+  const state = useIpcSub("repos:list", undefined);
   const toaster = useToaster();
   const alerts = useAlerts();
+  const [loadingRepos, setLoadingRepos] = React.useState<Set<string>>(
+    new Set()
+  );
+
+  const runRepoOperation = React.useCallback(
+    (repo: RepoSnapshot | RepoSnapshot[], fn: () => Promise<void>) => {
+      const repos = Array.isArray(repo) ? repo : [repo];
+
+      const next = new Set(loadingRepos);
+      for (const repo of repos) {
+        next.add(repo.name);
+      }
+      setLoadingRepos(next);
+
+      Promise.resolve()
+        .then(() =>
+          Promise.all(
+            repos.map((repo) =>
+              optionallyDealWithChanges(repo, alerts, toaster)
+            )
+          )
+        )
+        .then(fn)
+        .finally(() => {
+          setLoadingRepos((prev) => {
+            const next = new Set(prev);
+            for (const repo of repos) {
+              next.delete(repo.name);
+            }
+            return next;
+          });
+        });
+    },
+    [setLoadingRepos]
+  );
 
   if (state.type === "error") {
     throw state.error;
@@ -82,7 +117,41 @@ export const HomePage: React.FC = () => {
 
   return (
     <div className="m-2">
-      <h1 className="text-3xl mb-2">Repos</h1>
+      <div className="flex flex-row">
+        <h1 className="grow text-3xl mb-2">Repos</h1>
+        <div className="grow-0">
+          <Button
+            type="button"
+            compact
+            disabled={state.latest.type !== "valid" || loadingRepos.size > 0}
+            onClick={() => {
+              if (state.latest.type !== "valid") {
+                return;
+              }
+
+              const { repos } = state.latest;
+              const repoNames = repos.map((repo) => repo.name);
+              runRepoOperation(repos, async () => {
+                try {
+                  await ipcCall("repos:refresh", { repoNames });
+                  toaster.add({
+                    message: `refreshed all repo`,
+                    type: "success",
+                  });
+                } catch (_) {
+                  const error = toError(_);
+                  toaster.add({
+                    message: `Failed to refresh all repos: ${error.message}`,
+                    type: "error",
+                  });
+                }
+              });
+            }}
+          >
+            refresh all
+          </Button>
+        </div>
+      </div>
       {state.latest.type === "error" && (
         <p className="bg-red-700 text-white">
           Unable to read repos: {state.latest.error}
@@ -101,91 +170,141 @@ export const HomePage: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {state.latest.repos.map((repo, i) => (
-              <tr
-                key={repo.name}
-                className={i % 2 ? "bg-slate-900" : "bg-slate-950"}
-              >
-                <td>{repo.name}</td>
-                {repo.error ? (
-                  <td className="bg-red-700 text-white col-span-4">
-                    {repo.error}
-                  </td>
-                ) : (
-                  <>
-                    <td>
-                      {repo.gitStatus ? (
-                        <GitStatus status={repo.gitStatus} />
-                      ) : (
-                        <Spinner />
-                      )}
-                    </td>
-                    <td>{repo.currentBranch ?? <Spinner />}</td>
-                    <td>{repo.upstreamRemoteName ?? <Spinner />}</td>
-                    <td>{repo.commitsBehindUpstream ?? <Spinner />}</td>
-                  </>
-                )}
-                <td className="w-[200px] h-8 space-x-3">
-                  {repo.currentBranch === "main" ? (
-                    (repo.commitsBehindUpstream ?? 0) === 0 ? null : (
-                      <Button
-                        type="button"
-                        compact
-                        disabled={!!repo.gitStatus?.conflicts}
-                        onClick={() => {
-                          optionallyDealWithChanges(repo, alerts, toaster)
-                            .then(async () => {
-                              await ipcCall("repo:pullMain", {
-                                repoName: repo.name,
-                              });
-                              toaster.add({
-                                message: `pulled latest changes from main in repo "${repo.name}"`,
-                                type: "success",
-                              });
-                            })
-                            .catch((_) => {
-                              const error = toError(_);
-                              toaster.add({
-                                message: `Failed to pull latest changes from main into repo "${repo.name}": ${error.message}`,
-                                type: "error",
-                              });
-                            });
-                        }}
-                      >
-                        update
-                      </Button>
-                    )
-                  ) : (
-                    <Button
-                      type="button"
-                      compact
-                      disabled={!!repo.gitStatus?.conflicts}
-                      onClick={() => {
-                        optionallyDealWithChanges(repo, alerts, toaster)
-                          .then(async () => {
-                            await ipcCall("repo:switchToMain", {
-                              repoName: repo.name,
-                            });
-                            toaster.add({
-                              message: `switched repo "${repo.name}" to main`,
-                              type: "success",
-                            });
-                          })
-                          .catch((_) => {
-                            const error = toError(_);
-                            toaster.add({
-                              message: `Failed to switch repo "${repo.name}" to main: ${error.message}`,
-                              type: "error",
-                            });
+            {state.latest.repos.map((repo, i) => {
+              const loading =
+                loadingRepos.has(repo.name) ||
+                (!repo.error &&
+                  (repo.commitsBehindUpstream === undefined ||
+                    repo.currentBranch === undefined ||
+                    repo.upstreamRemoteName === undefined ||
+                    repo.gitStatus === undefined));
+
+              const controls = [
+                <Button
+                  key="refresh"
+                  type="button"
+                  compact
+                  disabled={loading}
+                  onClick={() =>
+                    runRepoOperation(repo, async () => {
+                      try {
+                        await ipcCall("repos:refresh", {
+                          repoNames: [repo.name],
+                        });
+                        toaster.add({
+                          message: `refreshed repo "${repo.name}"`,
+                          type: "success",
+                        });
+                      } catch (_) {
+                        const error = toError(_);
+                        toaster.add({
+                          message: `Failed to refresh repo "${repo.name}": ${error.message}`,
+                          type: "error",
+                        });
+                      }
+                    })
+                  }
+                >
+                  refresh
+                </Button>,
+              ];
+
+              if (
+                !repo.error &&
+                repo.currentBranch === "main" &&
+                (repo.commitsBehindUpstream ?? 0) > 0
+              ) {
+                controls.push(
+                  <Button
+                    key="pull-main"
+                    type="button"
+                    compact
+                    disabled={loading || !!repo.gitStatus?.conflicts}
+                    onClick={() => {
+                      runRepoOperation(repo, async () => {
+                        try {
+                          await ipcCall("repo:pullMain", {
+                            repoName: repo.name,
                           });
-                      }}
-                    >
-                      switch to main
-                    </Button>
+                          toaster.add({
+                            message: `pulled latest changes from main in repo "${repo.name}"`,
+                            type: "success",
+                          });
+                        } catch (_) {
+                          const error = toError(_);
+                          toaster.add({
+                            message: `Failed to pull latest changes from main into repo "${repo.name}": ${error.message}`,
+                            type: "error",
+                          });
+                        }
+                      });
+                    }}
+                  >
+                    pull main
+                  </Button>
+                );
+              }
+
+              if (!repo.error && repo.currentBranch !== "main") {
+                controls.push(
+                  <Button
+                    key="switch-to-main"
+                    type="button"
+                    compact
+                    disabled={loading || !!repo.gitStatus?.conflicts}
+                    onClick={() => {
+                      runRepoOperation(repo, async () => {
+                        try {
+                          await ipcCall("repo:switchToMain", {
+                            repoName: repo.name,
+                          });
+                          toaster.add({
+                            message: `switched repo "${repo.name}" to main`,
+                            type: "success",
+                          });
+                        } catch (_) {
+                          const error = toError(_);
+                          toaster.add({
+                            message: `Failed to switch repo "${repo.name}" to main: ${error.message}`,
+                            type: "error",
+                          });
+                        }
+                      });
+                    }}
+                  >
+                    switch to main
+                  </Button>
+                );
+              }
+
+              return (
+                <tr
+                  key={repo.name}
+                  className={i % 2 ? "bg-slate-900" : "bg-slate-950"}
+                >
+                  <td>{repo.name}</td>
+                  {repo.error ? (
+                    <td className="bg-red-700 text-white" colSpan={4}>
+                      {repo.error}
+                    </td>
+                  ) : (
+                    <>
+                      <td>
+                        {repo.gitStatus ? (
+                          <GitStatus status={repo.gitStatus} />
+                        ) : (
+                          <Spinner />
+                        )}
+                      </td>
+                      <td>{repo.currentBranch ?? <Spinner />}</td>
+                      <td>{repo.upstreamRemoteName ?? <Spinner />}</td>
+                      <td>{repo.commitsBehindUpstream ?? <Spinner />}</td>
+                    </>
                   )}
-                </td>
-              </tr>
-            ))}
+                  <td className="w-[200px] h-8 space-x-3">{controls}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       )}

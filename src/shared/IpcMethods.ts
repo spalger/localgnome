@@ -8,7 +8,7 @@ function defineIpcMethods<
 }
 
 export const IpcMethods = defineIpcMethods({
-  "repo list": {
+  "repos:list": {
     arg: z.undefined(),
     result: z.union([
       z.object({
@@ -33,6 +33,20 @@ export const IpcMethods = defineIpcMethods({
               .optional(),
           })
         ),
+      }),
+    ]),
+  },
+  "repos:refresh": {
+    arg: z.object({
+      repoNames: z.array(z.string()).min(1),
+    }),
+    result: z.union([
+      z.object({
+        type: z.literal("error"),
+        error: z.string(),
+      }),
+      z.object({
+        type: z.literal("success"),
       }),
     ]),
   },
