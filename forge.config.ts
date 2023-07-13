@@ -1,3 +1,4 @@
+import Path from "path";
 import type { ForgeConfig } from "@electron-forge/shared-types";
 import { MakerZIP } from "@electron-forge/maker-zip";
 import { AutoUnpackNativesPlugin } from "@electron-forge/plugin-auto-unpack-natives";
@@ -14,6 +15,11 @@ const config: ForgeConfig = {
       tool: "notarytool",
       keychainProfile: "localgnome-notorization",
     },
+    appBundleId: "dev.spalger.localgnome",
+    appCategoryType: "public.app-category.developer-tools",
+    appCopyright:
+      "MIT licensed, have fun, source available at github.com/spalger/localgnome",
+    icon: Path.resolve(__dirname, "./src/static/octo-gnome.icns"),
   },
   rebuildConfig: {},
   makers: [new MakerZIP({}, ["darwin"])],
