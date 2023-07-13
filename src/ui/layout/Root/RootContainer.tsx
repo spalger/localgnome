@@ -8,7 +8,7 @@ export const RootContainer: React.FC = () => {
         <NavLink
           to="/"
           className={({ isActive }) =>
-            classNames("p-2", isActive && "bg-indigo-800")
+            classNames("p-2", isActive && "bg-active")
           }
         >
           Home
@@ -16,7 +16,7 @@ export const RootContainer: React.FC = () => {
         <NavLink
           to="/settings"
           className={({ isActive }) =>
-            classNames("p-2", isActive && "bg-indigo-800")
+            classNames("p-2", isActive && "bg-active")
           }
         >
           Settings

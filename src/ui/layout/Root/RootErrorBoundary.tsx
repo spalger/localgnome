@@ -8,7 +8,7 @@ export const RootErrorBoundary: React.FC = () => {
   if (!error) return null;
 
   return (
-    <div className="w-4/5 mx-auto my-12">
+    <div className="w-4/5 mx-auto my-12 bg-error text-error">
       <h1>On no, an error occurred</h1>
       <pre>{toError(error).stack}</pre>
     </div>

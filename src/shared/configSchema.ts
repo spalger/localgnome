@@ -2,6 +2,9 @@ import { z } from "zod";
 
 export const ConfigSchema = z.object({
   reposDir: z.string().optional(),
+  theme: z
+    .union([z.literal("system"), z.literal("light"), z.literal("dark")])
+    .optional(),
   windowBounds: z
     .object({
       width: z.number().optional(),

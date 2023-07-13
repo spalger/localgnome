@@ -1,4 +1,4 @@
-import { session, app, BrowserWindow } from "electron";
+import { session, app, BrowserWindow, nativeTheme } from "electron";
 import * as Rx from "rxjs";
 import autoUpdater from "update-electron-app";
 
@@ -87,6 +87,21 @@ async function init() {
 
   const config = new Config();
   const repos = new RepoCollection(config);
+
+  // bind the config to electron modules
+  config
+    .get$("theme")
+    .pipe(
+      Rx.map((theme) => {
+        nativeTheme.themeSource = theme ?? "system";
+      })
+    )
+    .subscribe({
+      error(error) {
+        console.error("Failed to set theme", error);
+        process.exit(1);
+      },
+    });
 
   await initIpcRouter({
     config,

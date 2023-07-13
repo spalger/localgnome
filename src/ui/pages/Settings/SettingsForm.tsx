@@ -20,12 +20,23 @@ export const SettingsForm: React.FC<Props> = (props) => {
   return (
     <form onSubmit={handleSubmit((data) => props.onSubmit(data))}>
       <div className="p-2">
-        <label className="text-lg mr-2">Repos dir</label>
+        <label className="text-lg mr-2 w-40 inline-block">Repos dir</label>
         <input
           type="text"
-          className="border rounded p-1 w-96"
+          className="border rounded p-1 w-96 dark:bg-slate-900 dark:border-slate-800"
           {...register("reposDir", { disabled: props.saving })}
         />
+      </div>
+      <div className="p-2">
+        <label className="text-lg mr-2 w-40 inline-block">Theme</label>
+        <select
+          className="border rounded p-1 w-96 dark:bg-slate-900 dark:border-slate-800"
+          {...register("theme", { disabled: props.saving })}
+        >
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+          <option value="system">System</option>
+        </select>
       </div>
       <div className="p-2">
         <Button type="submit" disabled={props.saving}>

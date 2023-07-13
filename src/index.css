@@ -1,3 +1,27 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer root {
+  :root {
+    --color-active: rgb(131, 177, 251);
+
+    --color-error: rgb(220, 38, 38);
+    --color-text-error: white;
+
+    --color-text-default: rgb(1, 7, 17);
+    --color-text-disabled: rgb(135, 155, 185);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-active: rgb(55 48 163);
+
+      --color-error: rgb(185 28 28);
+      --color-text-error: white;
+
+      --color-text-default: rgb(235 235 235);
+      --color-text-disabled: rgb(55 65 81);
+    }
+  }
+}

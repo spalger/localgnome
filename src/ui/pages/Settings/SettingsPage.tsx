@@ -50,7 +50,7 @@ export const SettingsPage: React.FC = () => {
         onSubmit={onSubmit}
       />
       {"latest" in appInfo && (
-        <p>
+        <p className="p-2">
           This is localgnome version {appInfo.latest.version}
           {!appInfo.latest.distributable ? " (dev)" : ""}. For help please file
           an issue on <a href="https://github.com/spalger/localgnome">github</a>

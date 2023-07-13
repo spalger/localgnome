@@ -153,7 +153,7 @@ export const HomePage: React.FC = () => {
         </div>
       </div>
       {state.latest.type === "error" && (
-        <p className="bg-red-700 text-white">
+        <p className="bg-error text-error">
           Unable to read repos: {state.latest.error}
         </p>
       )}
@@ -283,7 +283,11 @@ export const HomePage: React.FC = () => {
               return (
                 <tr
                   key={repo.name}
-                  className={i % 2 ? "bg-slate-900" : "bg-slate-950"}
+                  className={
+                    i % 2
+                      ? "bg-slate-100 dark:bg-slate-900"
+                      : "bg-slate-200 dark:bg-slate-950"
+                  }
                 >
                   <td>{repo.name}</td>
                   <td>
@@ -344,7 +348,7 @@ export const HomePage: React.FC = () => {
                           <span
                             className={
                               repo.commitsAheadUpstream === 0
-                                ? "text-gray-700"
+                                ? "text-disabled"
                                 : ""
                             }
                           >
@@ -359,7 +363,7 @@ export const HomePage: React.FC = () => {
                           <span
                             className={
                               repo.commitsBehindUpstream === 0
-                                ? "text-gray-700"
+                                ? "text-disabled"
                                 : ""
                             }
                           >
