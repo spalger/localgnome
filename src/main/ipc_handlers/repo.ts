@@ -72,3 +72,13 @@ export const RepoOpenHandler = operateOnRepo<"repo:open">((repo, { type }) => {
     }))
   );
 });
+
+export const RepoResetToMainHandler = operateOnRepo<"repo:resetToMain">(
+  (repo) => {
+    return Rx.defer(() => repo.resetToMain()).pipe(
+      Rx.map(() => ({
+        type: "success",
+      }))
+    );
+  }
+);

@@ -319,19 +319,20 @@ export class Repo {
     };
   }
 
+  getUpstreamRemoteName() {
+    const upstreamRemoteName = this.state$.getValue().repo.upstreamRemoteName;
+    if (!upstreamRemoteName) {
+      throw new Error("upstream remote name not loaded");
+    }
+    return upstreamRemoteName;
+  }
+
   async switchToMain() {
     await this.git.checkout("main");
   }
 
   async pullMain() {
-    const upstream = this.state$.getValue().repo.upstreamRemoteName;
-    if (!upstream) {
-      throw new Error(
-        "unable to pull main until upstream remote name is loaded"
-      );
-    }
-
-    await this.git.pull(upstream, "main");
+    await this.git.pull(this.getUpstreamRemoteName(), "main");
     this.pulledMain$.next();
   }
 
@@ -365,5 +366,10 @@ export class Repo {
         await runAppleScript(openEditorAppleScript(this.path));
         break;
     }
+  }
+
+  async resetToMain() {
+    await this.git.reset(["--hard", `${this.getUpstreamRemoteName()}/main`]);
+    await this.pullMain();
   }
 }

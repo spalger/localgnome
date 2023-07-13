@@ -9,7 +9,7 @@ interface Props {
 }
 
 export const Icon: React.FC<Props> = ({ name }) => (
-  <svg className="bi" width="16" height="16" fill="currentColor">
+  <svg className="bi" width="1.4em" height="1.4em" fill="currentColor">
     <use xlinkHref={`${iconsSvgPath}#${name}`} />
   </svg>
 );

@@ -345,15 +345,66 @@ export const HomePage: React.FC = () => {
                         {repo.commitsAheadUpstream === undefined ? (
                           <Spinner />
                         ) : (
-                          <span
-                            className={
-                              repo.commitsAheadUpstream === 0
-                                ? "text-disabled"
-                                : ""
-                            }
-                          >
-                            {repo.commitsAheadUpstream}↑
-                          </span>
+                          <>
+                            <span
+                              className={
+                                repo.commitsAheadUpstream === 0
+                                  ? "text-disabled"
+                                  : ""
+                              }
+                            >
+                              {repo.commitsAheadUpstream}↑
+                            </span>
+                            {repo.commitsAheadUpstream > 0 &&
+                            repo.currentBranch === "main" ? (
+                              <Button
+                                type="button"
+                                compact
+                                icon="trash"
+                                className="ml-2"
+                                onClick={() => {
+                                  runRepoOperation(repo, async () => {
+                                    const result = await alerts.show({
+                                      message: `Are you sure? This will discard the ${repo.commitsAheadUpstream} commits you have made on main in repo "${repo.name}".`,
+                                      choices: [
+                                        {
+                                          label: "Yes",
+                                          value: "yes",
+                                        },
+                                        {
+                                          label: "Cancel",
+                                          value: "cancel",
+                                        },
+                                      ],
+                                    });
+
+                                    if (
+                                      result.type !== "selection" ||
+                                      result.choice !== "yes"
+                                    ) {
+                                      return;
+                                    }
+
+                                    try {
+                                      await ipcCall("repo:resetToMain", {
+                                        repoName: repo.name,
+                                      });
+                                      toaster.add({
+                                        message: `discarded changes in repo "${repo.name}"`,
+                                        type: "success",
+                                      });
+                                    } catch (_) {
+                                      const error = toError(_);
+                                      toaster.add({
+                                        message: `Failed to discard changes in repo "${repo.name}": ${error.message}`,
+                                        type: "error",
+                                      });
+                                    }
+                                  });
+                                }}
+                              />
+                            ) : null}
+                          </>
                         )}
                       </td>
                       <td>

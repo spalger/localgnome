@@ -7,6 +7,7 @@ interface Props extends React.PropsWithChildren {
   icon?: IconName;
   compact?: boolean;
   disabled?: boolean;
+  className?: string;
   onClick?: () => void;
 }
 
@@ -18,12 +19,13 @@ export const Button: React.FC<Props> = (props) => (
     className={classNames(
       "border rounded-md bg-indigo-950 border-indigo-600  ",
       "text-white",
-      props.compact ? "p-1 text-xs" : "p-2 px-4 font-semibold",
+      props.compact ? "p-1 text-[10px]" : "p-2 px-4 font-semibold",
       "hover:enabled:bg-indigo-900 hover:enabled:shadow-md hover:enabled:shadow-fuchsia-500",
       {
         "bg-indigo-500": props.theme === "primary",
         "opacity-50 cursor-not-allowed": props.disabled,
-      }
+      },
+      props.className
     )}
   >
     {props.icon && <Icon name={props.icon} />}

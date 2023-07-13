@@ -53,8 +53,10 @@ export const AlertView: React.FC<Props> = ({ alert }) => {
 
   return createPortal(
     <div className="fixed inset-0 flex items-center justify-center bg-opacity-20 bg-black">
-      <div className="bg-white rounded-md shadow-lg p-4">
-        <div className="text-lg font-semibold mb-2">{alert.message}</div>
+      <div className="bg-slate-100 border-4 border-indigo-700 dark:bg-white rounded-md shadow-lg p-4">
+        <div className="text-lg dark:text-black font-semibold mb-2">
+          {alert.message}
+        </div>
         <div className="flex justify-end gap-2">
           {alert.choices.map((choice) => (
             <Button
