@@ -10,6 +10,20 @@ import { useToaster, ToasterService } from "ui/lib/Toaster";
 import { useAlerts, AlertsService } from "ui/lib/Alerts";
 import { RepoSnapshot } from "main/repos/Repo";
 
+const ABORT = Symbol("abort");
+
+function list(strings: string[]) {
+  switch (strings.length) {
+    case 0:
+      return "";
+    case 1:
+      return strings[0];
+    default:
+      const last = strings.at(-1);
+      return strings.slice(0, -1).join(", ") + " and " + last;
+  }
+}
+
 async function optionallyDealWithChanges(
   repo: RepoSnapshot,
   alerts: AlertsService,
@@ -20,7 +34,7 @@ async function optionallyDealWithChanges(
   }
 
   const result = await alerts.show({
-    message: `There are uncommitted changes in the ${repo.currentBranch} branch, want to commit them before switching to main?`,
+    message: `There are uncommitted changes in the ${repo.currentBranch} branch, want to commit them first?`,
     choices: [
       {
         label: "Yes, commit them",
@@ -32,6 +46,10 @@ async function optionallyDealWithChanges(
         value: "stash",
       },
       {
+        label: "No, discard them",
+        value: "discard",
+      },
+      {
         label: "No, ignore them",
         value: "ignore",
       },
@@ -39,7 +57,7 @@ async function optionallyDealWithChanges(
   });
 
   if (result.type !== "selection") {
-    return;
+    return ABORT;
   }
 
   switch (result.choice) {
@@ -64,6 +82,64 @@ async function optionallyDealWithChanges(
         type: "success",
       });
       break;
+
+    case "discard":
+      return await maybeDiscardRepoChanges(repo, alerts, toaster);
+  }
+}
+
+async function maybeDiscardRepoChanges(
+  repo: RepoSnapshot,
+  alerts: AlertsService,
+  toaster: ToasterService
+) {
+  const description = [];
+  if (repo.gitStatus?.changedFiles) {
+    description.push(`the ${repo.gitStatus.changedFiles} changed files`);
+  }
+  if (repo.gitStatus?.conflicts) {
+    description.push(`the ${repo.gitStatus.conflicts} conflicting files`);
+  }
+  if (repo.commitsAheadUpstream) {
+    description.push(
+      `the ${repo.commitsAheadUpstream} commits you have made on main`
+    );
+  }
+
+  const result = await alerts.show({
+    message: `Are you sure? This will discard ${
+      description.length ? list(description) : "all changes"
+    } in repo "${repo.name}".`,
+    choices: [
+      {
+        label: "Yes",
+        value: "yes",
+      },
+      {
+        label: "Cancel",
+        value: "cancel",
+      },
+    ],
+  });
+
+  if (result.type !== "selection" || result.choice !== "yes") {
+    return ABORT;
+  }
+
+  try {
+    await ipcCall("repo:resetToMain", {
+      repoName: repo.name,
+    });
+    toaster.add({
+      message: `discarded changes in repo "${repo.name}"`,
+      type: "success",
+    });
+  } catch (_) {
+    const error = toError(_);
+    toaster.add({
+      message: `Failed to discard changes in repo "${repo.name}": ${error.message}`,
+      type: "error",
+    });
   }
 }
 
@@ -76,7 +152,10 @@ export const HomePage: React.FC = () => {
   );
 
   const runRepoOperation = React.useCallback(
-    (repo: RepoSnapshot | RepoSnapshot[], fn: () => Promise<void>) => {
+    (
+      repo: RepoSnapshot | RepoSnapshot[],
+      fn: (repos: RepoSnapshot[]) => Promise<void>
+    ) => {
       const repos = Array.isArray(repo) ? repo : [repo];
 
       const next = new Set(loadingRepos);
@@ -88,12 +167,19 @@ export const HomePage: React.FC = () => {
       Promise.resolve()
         .then(() =>
           Promise.all(
-            repos.map((repo) =>
-              optionallyDealWithChanges(repo, alerts, toaster)
+            repos.map(async (repo) =>
+              (await optionallyDealWithChanges(repo, alerts, toaster)) === ABORT
+                ? ABORT
+                : repo
             )
           )
         )
-        .then(fn)
+        .then(async (repos) => {
+          const valid = repos.flatMap((r) => (r === ABORT ? [] : [r]));
+          if (valid.length > 0) {
+            await fn(valid);
+          }
+        })
         .finally(() => {
           setLoadingRepos((prev) => {
             const next = new Set(prev);
@@ -130,10 +216,11 @@ export const HomePage: React.FC = () => {
               }
 
               const { repos } = state.latest;
-              const repoNames = repos.map((repo) => repo.name);
-              runRepoOperation(repos, async () => {
+              runRepoOperation(repos, async (repos) => {
                 try {
-                  await ipcCall("repos:refresh", { repoNames });
+                  await ipcCall("repos:refresh", {
+                    repoNames: repos.map((repo) => repo.name),
+                  });
                   toaster.add({
                     message: `refreshed all repo`,
                     type: "success",
@@ -364,42 +451,11 @@ export const HomePage: React.FC = () => {
                                 className="ml-2"
                                 onClick={() => {
                                   runRepoOperation(repo, async () => {
-                                    const result = await alerts.show({
-                                      message: `Are you sure? This will discard the ${repo.commitsAheadUpstream} commits you have made on main in repo "${repo.name}".`,
-                                      choices: [
-                                        {
-                                          label: "Yes",
-                                          value: "yes",
-                                        },
-                                        {
-                                          label: "Cancel",
-                                          value: "cancel",
-                                        },
-                                      ],
-                                    });
-
-                                    if (
-                                      result.type !== "selection" ||
-                                      result.choice !== "yes"
-                                    ) {
-                                      return;
-                                    }
-
-                                    try {
-                                      await ipcCall("repo:resetToMain", {
-                                        repoName: repo.name,
-                                      });
-                                      toaster.add({
-                                        message: `discarded changes in repo "${repo.name}"`,
-                                        type: "success",
-                                      });
-                                    } catch (_) {
-                                      const error = toError(_);
-                                      toaster.add({
-                                        message: `Failed to discard changes in repo "${repo.name}": ${error.message}`,
-                                        type: "error",
-                                      });
-                                    }
+                                    await maybeDiscardRepoChanges(
+                                      repo,
+                                      alerts,
+                                      toaster
+                                    );
                                   });
                                 }}
                               />
