@@ -165,7 +165,8 @@ export const HomePage: React.FC = () => {
               <td>Status</td>
               <td>Current branch</td>
               <td>Upstream remote</td>
-              <td>Commits behind</td>
+              <td>Ahead</td>
+              <td>Behind</td>
               <td className="w-[100px]"></td>
             </tr>
           </thead>
@@ -175,6 +176,7 @@ export const HomePage: React.FC = () => {
                 loadingRepos.has(repo.name) ||
                 (!repo.error &&
                   (repo.commitsBehindUpstream === undefined ||
+                    repo.commitsAheadUpstream === undefined ||
                     repo.currentBranch === undefined ||
                     repo.upstreamRemoteName === undefined ||
                     repo.gitStatus === undefined));
@@ -284,7 +286,7 @@ export const HomePage: React.FC = () => {
                 >
                   <td>{repo.name}</td>
                   {repo.error ? (
-                    <td className="bg-red-700 text-white" colSpan={4}>
+                    <td className="bg-red-700 text-white" colSpan={5}>
                       {repo.error}
                     </td>
                   ) : (
@@ -298,7 +300,36 @@ export const HomePage: React.FC = () => {
                       </td>
                       <td>{repo.currentBranch ?? <Spinner />}</td>
                       <td>{repo.upstreamRemoteName ?? <Spinner />}</td>
-                      <td>{repo.commitsBehindUpstream ?? <Spinner />}</td>
+                      <td>
+                        {repo.commitsBehindUpstream === undefined ? (
+                          <Spinner />
+                        ) : (
+                          <span
+                            className={
+                              repo.commitsBehindUpstream === 0
+                                ? "text-gray-700"
+                                : ""
+                            }
+                          >
+                            {repo.commitsBehindUpstream}↓
+                          </span>
+                        )}
+                      </td>
+                      <td>
+                        {repo.commitsAheadUpstream === undefined ? (
+                          <Spinner />
+                        ) : (
+                          <span
+                            className={
+                              repo.commitsAheadUpstream === 0
+                                ? "text-gray-700"
+                                : ""
+                            }
+                          >
+                            {repo.commitsAheadUpstream}↓
+                          </span>
+                        )}
+                      </td>
                     </>
                   )}
                   <td className="w-[200px] h-8 space-x-3">{controls}</td>

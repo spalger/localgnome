@@ -3,6 +3,6 @@
 - [x]: Collect info about repos
 - [x]: Allow switching to `main` branch and pulling latest changes from main into branch
 - [x]: When switching or pulling, support automatic handling of local changes
-- [ ]: improve watching, `commits behind upstream` isn't very accurate with time
 - [x]: support refreshing data manually
-- [ ]: when a branch is ahead of main, it renders as "behind", expose this info correctly
+- [x]: when a branch is ahead of main, it renders as "behind", expose this info correctly
+- [ ]: improve watching, `commits behind upstream` isn't very accurate with time

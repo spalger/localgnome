@@ -18,6 +18,7 @@ export interface RepoSnapshot {
   error?: string;
   currentBranch?: string;
   upstreamRemoteName?: string;
+  commitsAheadUpstream?: number;
   commitsBehindUpstream?: number;
   gitStatus?: {
     changedFiles: number;
@@ -96,42 +97,48 @@ export class Repo {
       )
     );
 
-    const commitsBehindUpstream$ = stateProp$(
-      "commitsBehindUpstream",
-      Rx.merge(
-        // clear the current value when main is pulled
-        Rx.merge(this.pulledMain$, this.refresh$).pipe(Rx.map(() => undefined)),
+    const gitPositionInfo$ = Rx.merge(
+      // clear the current value when main is pulled
+      Rx.merge(this.pulledMain$, this.refresh$).pipe(Rx.map(() => undefined)),
 
-        Rx.combineLatest([
-          upstreamRemoteName$,
-          Rx.merge(
-            this.pulledMain$,
-            this.refresh$,
-            // refresh at some point between 30 minutes and 1 hour, then hourly after that. This
-            // prevents us from refreshing all repos at the same time, but should keep them
-            // roughly up-to-date with the remote repos.
-            Rx.timer(random(30 * MINUTE, 1 * HOUR), 1 * HOUR),
-            Rx.merge(headChange$, remotesChange$).pipe(Rx.debounceTime(1000))
-          ).pipe(Rx.startWith(undefined)),
-        ]).pipe(
-          Rx.switchMap(([[, upstreamRemoteName]]) => {
-            if (!upstreamRemoteName || upstreamRemoteName instanceof Error) {
-              return Rx.of(undefined);
-            }
+      Rx.combineLatest([
+        upstreamRemoteName$,
+        Rx.merge(
+          this.pulledMain$,
+          this.refresh$,
+          // refresh at some point between 30 minutes and 1 hour, then hourly after that. This
+          // prevents us from refreshing all repos at the same time, but should keep them
+          // roughly up-to-date with the remote repos.
+          Rx.timer(random(30 * MINUTE, 1 * HOUR), 1 * HOUR),
+          Rx.merge(headChange$, remotesChange$).pipe(Rx.debounceTime(1000))
+        ).pipe(Rx.startWith(undefined)),
+      ]).pipe(
+        Rx.switchMap(([[, upstreamRemoteName]]) => {
+          if (!upstreamRemoteName || upstreamRemoteName instanceof Error) {
+            return Rx.of(undefined);
+          }
 
-            return Rx.defer(async () => {
+          return Rx.defer(
+            async (): Promise<{ ahead: number; behind: number } | Error> => {
               try {
                 await this.git.fetch(upstreamRemoteName, "main");
-                return parseInt(
-                  (
-                    await this.git.raw([
-                      "rev-list",
-                      "--count",
-                      `HEAD...${upstreamRemoteName}/main`,
-                    ])
-                  ).trim(),
-                  10
-                );
+                const numbers = (
+                  await this.git.raw([
+                    "rev-list",
+                    "--left-right",
+                    "--count",
+                    `HEAD...${upstreamRemoteName}/main`,
+                  ])
+                )
+                  .trim()
+                  .split("\t")
+                  .map((n) => Number(n));
+
+                if (numbers.length !== 2) {
+                  return new Error("expected two numbers from git output");
+                }
+
+                return { ahead: numbers[0], behind: numbers[1] };
               } catch (_) {
                 const error = toError(_);
                 if (
@@ -152,9 +159,35 @@ export class Repo {
 
                 throw error;
               }
-            });
-          })
-        )
+            }
+          );
+        }),
+        Rx.share()
+      )
+    );
+
+    const commitsBehindUpstream$ = stateProp$(
+      "commitsBehindUpstream",
+      gitPositionInfo$.pipe(
+        Rx.map((position) => {
+          if (position instanceof Error) {
+            return position;
+          }
+
+          return position?.behind;
+        })
+      )
+    );
+    const commitsAheadUpstream$ = stateProp$(
+      "commitsAheadUpstream",
+      gitPositionInfo$.pipe(
+        Rx.map((position) => {
+          if (position instanceof Error) {
+            return position;
+          }
+
+          return position?.ahead;
+        })
       )
     );
 
@@ -182,6 +215,7 @@ export class Repo {
     const stateChange$ = Rx.merge(
       currentBranch$,
       upstreamRemoteName$,
+      commitsAheadUpstream$,
       commitsBehindUpstream$,
       status$
     );
@@ -220,6 +254,7 @@ export class Repo {
         [
           "currentBranch",
           "upstreamRemoteName",
+          "commitsAheadUpstream",
           "commitsBehindUpstream",
           "gitStatus",
         ] as Array<keyof RepoSnapshot>

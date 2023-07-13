@@ -25,6 +25,7 @@ export const IpcMethods = defineIpcMethods({
             currentBranch: z.string().optional(),
             upstreamRemoteName: z.string().optional(),
             commitsBehindUpstream: z.number().optional(),
+            commitsAheadUpstream: z.number().optional(),
             gitStatus: z
               .object({
                 changedFiles: z.number(),
