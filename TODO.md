@@ -5,4 +5,5 @@
 - [x]: When switching or pulling, support automatic handling of local changes
 - [x]: support refreshing data manually
 - [x]: when a branch is ahead of main, it renders as "behind", expose this info correctly
+- [x]: add the ability to open a repo in your editor or terminal
 - [ ]: improve watching, `commits behind upstream` isn't very accurate with time

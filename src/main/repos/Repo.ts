@@ -1,11 +1,15 @@
 import Path from "path";
+import Util from "util";
 
 import * as Rx from "rxjs";
 import simpleGit, { SimpleGit } from "simple-git";
+import ChildProcess from "child_process";
+import shellEscape from "shell-escape";
 
 import { watch$ } from "main/lib/watch";
 import { toError } from "shared/errors";
 
+const execFile = Util.promisify(ChildProcess.execFile);
 const MINUTE = 1000 * 60;
 const HOUR = MINUTE * 60;
 
@@ -29,6 +33,40 @@ export interface RepoSnapshot {
 interface InternalState {
   erroring: Set<keyof RepoSnapshot>;
   repo: RepoSnapshot;
+}
+
+async function runAppleScript(script: string) {
+  await execFile(
+    "osascript",
+    script
+      .trim()
+      .split("\n")
+      .flatMap((l) => ["-e", l])
+  );
+}
+
+function openTerminalAppleScript(path: string) {
+  const shellEscaped = shellEscape([path]);
+  const appleScriptEscaped = shellEscaped.replace(/"/g, '\\"');
+
+  return `
+tell application "iTerm2"
+  tell current window to create tab with default profile
+  tell current session of current window to write text "cd ${appleScriptEscaped}"
+  activate
+end tell
+`;
+}
+
+function openEditorAppleScript(path: string) {
+  const appleScriptEscaped = path.replace(/"/g, '\\"');
+
+  return `
+tell application "Visual Studio Code"
+  open "${appleScriptEscaped}"
+  activate
+end tell
+`;
 }
 
 export class Repo {
@@ -316,5 +354,16 @@ export class Repo {
         })
       )
     );
+  }
+
+  async open(type: "terminal" | "editor") {
+    switch (type) {
+      case "terminal":
+        await runAppleScript(openTerminalAppleScript(this.path));
+        break;
+      case "editor":
+        await runAppleScript(openEditorAppleScript(this.path));
+        break;
+    }
   }
 }

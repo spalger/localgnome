@@ -64,3 +64,11 @@ export const RepoStashChangesHandler = operateOnRepo<"repo:stashChanges">(
     );
   }
 );
+
+export const RepoOpenHandler = operateOnRepo<"repo:open">((repo, { type }) => {
+  return Rx.defer(() => repo.open(type)).pipe(
+    Rx.map(() => ({
+      type: "success",
+    }))
+  );
+});

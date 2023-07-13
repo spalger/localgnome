@@ -101,6 +101,21 @@ export const IpcMethods = defineIpcMethods({
       }),
     ]),
   },
+  "repo:open": {
+    arg: z.object({
+      type: z.union([z.literal("terminal"), z.literal("editor")]),
+      repoName: z.string(),
+    }),
+    result: z.union([
+      z.object({
+        type: z.literal("error"),
+        error: z.string(),
+      }),
+      z.object({
+        type: z.literal("success"),
+      }),
+    ]),
+  },
   "repo:stashChanges": {
     arg: z.object({
       repoName: z.string(),

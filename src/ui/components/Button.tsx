@@ -1,8 +1,10 @@
 import classNames from "classnames";
+import { Icon, type IconName } from "./Icon";
 
 interface Props extends React.PropsWithChildren {
   type?: "button" | "submit";
   theme?: "primary" | "secondary";
+  icon?: IconName;
   compact?: boolean;
   disabled?: boolean;
   onClick?: () => void;
@@ -24,6 +26,7 @@ export const Button: React.FC<Props> = (props) => (
       }
     )}
   >
+    {props.icon && <Icon name={props.icon} />}
     {props.children}
   </button>
 );

@@ -162,6 +162,7 @@ export const HomePage: React.FC = () => {
           <thead>
             <tr>
               <td>Name</td>
+              <td>Open</td>
               <td>Status</td>
               <td>Current branch</td>
               <td>Upstream remote</td>
@@ -285,6 +286,42 @@ export const HomePage: React.FC = () => {
                   className={i % 2 ? "bg-slate-900" : "bg-slate-950"}
                 >
                   <td>{repo.name}</td>
+                  <td>
+                    <Button
+                      type="button"
+                      compact
+                      icon="terminal"
+                      onClick={() =>
+                        ipcCall("repo:open", {
+                          type: "terminal",
+                          repoName: repo.name,
+                        }).catch((_) => {
+                          const error = toError(_);
+                          toaster.add({
+                            message: `Failed to open repo "${repo.name}" in your terminal: ${error.message}`,
+                            type: "error",
+                          });
+                        })
+                      }
+                    />
+                    <Button
+                      type="button"
+                      compact
+                      icon="pencil-square"
+                      onClick={() =>
+                        ipcCall("repo:open", {
+                          type: "editor",
+                          repoName: repo.name,
+                        }).catch((_) => {
+                          const error = toError(_);
+                          toaster.add({
+                            message: `Failed to open repo "${repo.name}" in your editor: ${error.message}`,
+                            type: "error",
+                          });
+                        })
+                      }
+                    />
+                  </td>
                   {repo.error ? (
                     <td className="bg-red-700 text-white" colSpan={5}>
                       {repo.error}

@@ -8,6 +8,7 @@ import {
   RepoPullMainHandler,
   RepoSaveChangesHandler,
   RepoStashChangesHandler,
+  RepoOpenHandler,
 } from "./repo";
 
 export const IpcHandlers: Handlers = {
@@ -20,4 +21,5 @@ export const IpcHandlers: Handlers = {
   "repo:pullMain": RepoPullMainHandler,
   "repo:saveChanges": RepoSaveChangesHandler,
   "repo:stashChanges": RepoStashChangesHandler,
+  "repo:open": RepoOpenHandler,
 };
