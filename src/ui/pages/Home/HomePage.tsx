@@ -301,6 +301,21 @@ export const HomePage: React.FC = () => {
                       <td>{repo.currentBranch ?? <Spinner />}</td>
                       <td>{repo.upstreamRemoteName ?? <Spinner />}</td>
                       <td>
+                        {repo.commitsAheadUpstream === undefined ? (
+                          <Spinner />
+                        ) : (
+                          <span
+                            className={
+                              repo.commitsAheadUpstream === 0
+                                ? "text-gray-700"
+                                : ""
+                            }
+                          >
+                            {repo.commitsAheadUpstream}↑
+                          </span>
+                        )}
+                      </td>
+                      <td>
                         {repo.commitsBehindUpstream === undefined ? (
                           <Spinner />
                         ) : (
@@ -312,21 +327,6 @@ export const HomePage: React.FC = () => {
                             }
                           >
                             {repo.commitsBehindUpstream}↓
-                          </span>
-                        )}
-                      </td>
-                      <td>
-                        {repo.commitsAheadUpstream === undefined ? (
-                          <Spinner />
-                        ) : (
-                          <span
-                            className={
-                              repo.commitsAheadUpstream === 0
-                                ? "text-gray-700"
-                                : ""
-                            }
-                          >
-                            {repo.commitsAheadUpstream}↓
                           </span>
                         )}
                       </td>
