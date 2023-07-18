@@ -2,7 +2,7 @@
   "name": "localgnome",
   "productName": "localgnome",
   "private": true,
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "An electron app for managing local git repositories",
   "main": ".webpack/main",
   "scripts": {
