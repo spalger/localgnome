@@ -1,6 +1,13 @@
-import { session, app, BrowserWindow, nativeTheme } from "electron";
+import {
+  session,
+  app,
+  BrowserWindow,
+  nativeTheme,
+  Menu,
+  autoUpdater,
+  dialog,
+} from "electron";
 import * as Rx from "rxjs";
-import autoUpdater from "update-electron-app";
 
 import { initIpcRouter } from "main/ipcRouter";
 import { Config } from "main/config";
@@ -12,10 +19,21 @@ import { RepoCollection } from "main/repos";
 declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
 
+let currentMainWindow: BrowserWindow | null = null;
 const createWindow = (config: Config): void => {
+  if (currentMainWindow) {
+    currentMainWindow.show();
+    return;
+  }
+
   Rx.firstValueFrom(config.get$("windowBounds")).then((oldBounds) => {
+    if (currentMainWindow) {
+      currentMainWindow.show();
+      return;
+    }
+
     // Create the browser window.
-    const mainWindow = new BrowserWindow({
+    const mainWindow = (currentMainWindow = new BrowserWindow({
       height: oldBounds?.height || 1000,
       width: oldBounds?.width || 1200,
       x: oldBounds?.x,
@@ -25,7 +43,7 @@ const createWindow = (config: Config): void => {
         nodeIntegration: true,
         contextIsolation: false,
       },
-    });
+    }));
 
     // auto persist window bounds to config
     Rx.merge(
@@ -46,17 +64,111 @@ const createWindow = (config: Config): void => {
       )
       .subscribe();
 
+    Rx.fromEvent(mainWindow, "close").subscribe(() => {
+      currentMainWindow = null;
+    });
+
     // and load the index.html of the app.
     mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
   });
 };
 
 async function init() {
-  autoUpdater({
-    repo: "spalger/localgnome",
+  const updateUrl = `https://update.electronjs.org/spalger/localgnome/${
+    process.platform
+  }-${process.arch}/${app.getVersion()}`;
+  const updateHeaders = { "User-Agent": "spalger/localgnome" };
+  autoUpdater.setFeedURL({ url: updateUrl, headers: updateHeaders });
+
+  if (app.isPackaged) {
+    autoUpdater.checkForUpdates();
+  }
+
+  autoUpdater.on("update-downloaded", (_, releaseNotes, releaseName) => {
+    dialog
+      .showMessageBox({
+        type: "info",
+        buttons: ["Restart", "Later"],
+        title: "Application Update",
+        message: process.platform === "win32" ? releaseNotes : releaseName,
+        detail:
+          "A new version has been downloaded. Restart the application to apply the updates.",
+      })
+      .then(({ response }) => {
+        if (response !== 0) return;
+        autoUpdater.quitAndInstall();
+      });
   });
 
   await app.whenReady();
+
+  const menu = Menu.buildFromTemplate([
+    {
+      label: app.name,
+      submenu: [
+        { role: "about" },
+        { type: "separator" },
+        { role: "services" },
+        { type: "separator" },
+        { role: "hide" },
+        { role: "hideOthers" },
+        { role: "unhide" },
+        { type: "separator" },
+        {
+          label: "Check for update",
+          click: () =>
+            Rx.race(
+              Rx.defer(() => {
+                autoUpdater.checkForUpdates();
+                return Rx.NEVER;
+              }),
+              Rx.fromEvent(autoUpdater, "update-available").pipe(
+                Rx.map(() => "update-available" as const)
+              ),
+              Rx.fromEvent(autoUpdater, "update-not-available").pipe(
+                Rx.map(() => "update-not-available" as const)
+              )
+            ).subscribe({
+              next: (event) => {
+                if (event === "update-not-available") {
+                  dialog.showMessageBox({
+                    type: "info",
+                    buttons: ["OK"],
+                    title: "Check for update",
+                    message: "No update available at this time",
+                  });
+                }
+              },
+            }),
+        },
+        { type: "separator" },
+        { role: "quit" },
+      ],
+    },
+    { role: "fileMenu" },
+    { role: "viewMenu" },
+    {
+      role: "windowMenu",
+      submenu: [
+        {
+          label: "Main view",
+          accelerator: "CmdOrCtrl+1",
+          registerAccelerator: true,
+          click: () => {
+            createWindow(config);
+          },
+        },
+        { type: "separator" },
+        { role: "minimize" },
+        { role: "zoom" },
+        { type: "separator" },
+        { role: "front" },
+        { type: "separator" },
+        { role: "window" },
+      ],
+    },
+  ]);
+  Menu.setApplicationMenu(menu);
 
   // ensure that CSP is set to the most restrictive value
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
