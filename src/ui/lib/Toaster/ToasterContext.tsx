@@ -20,6 +20,7 @@ export interface Toast {
   durationFrom: number;
   pause: () => void;
   unpause: () => void;
+  dismiss: () => void;
 }
 
 export interface ToasterContextValue {
@@ -104,6 +105,7 @@ export const ToasterContextProvider: React.FC<Props> = (props) => {
             durationFrom: Date.now(),
             pause: makePauseSetter(setToasts, id, true),
             unpause: makePauseSetter(setToasts, id, false),
+            dismiss: () => setToasts((t) => t.filter((t) => t.id !== id)),
           },
         ]);
       },

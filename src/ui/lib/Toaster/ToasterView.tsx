@@ -24,18 +24,22 @@ export const ToasterView: React.FC = () => {
   }
 
   return createPortal(
-    <div className="fixed bottom-0 right-0 p-4 flex flex-col gap-2 w-96">
+    <div className="fixed top-0 left-[calc(50%-200px)] w-[400px] p-4 flex flex-col gap-2">
       {toasts.map((toast) => (
         <div
           key={toast.id}
-          className={classNames("p-4 rounded-lg shadow-md", {
-            "bg-green-900 text-white": toast.type === "success",
-            "bg-red-900 text-white": toast.type === "error",
-            "bg-yellow-600 text-black": toast.type === "warning",
-            "bg-slate-900 text-white": toast.type === "info",
-          })}
+          className={classNames(
+            "p-2 rounded-md shadow-md text-xs hover:opacity-75 transition-opacity duration-200 ease-in-out cursor-pointer",
+            {
+              "bg-green-900 text-white": toast.type === "success",
+              "bg-red-900 text-white": toast.type === "error",
+              "bg-yellow-600 text-black": toast.type === "warning",
+              "bg-slate-900 text-white": toast.type === "info",
+            }
+          )}
           onMouseEnter={() => toast.pause()}
           onMouseLeave={() => toast.unpause()}
+          onClick={() => toast.dismiss()}
         >
           {toast.message}
         </div>
