@@ -1,4 +1,5 @@
 import Fs from "fs";
+import Path from "path";
 
 import * as Rx from "rxjs";
 
@@ -67,7 +68,10 @@ export class RepoCollection {
                     }
 
                     for (const ent of dirEntsOrState) {
-                      if (!ent.isDirectory()) {
+                      if (
+                        !ent.isDirectory() ||
+                        !Fs.existsSync(Path.resolve(ent.path, ".git"))
+                      ) {
                         continue;
                       }
 
