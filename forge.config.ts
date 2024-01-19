@@ -50,7 +50,7 @@ const config: ForgeConfig = {
           name: "localgnome",
         },
         prerelease: false,
-        draft: true,
+        draft: false,
       },
     },
   ],
