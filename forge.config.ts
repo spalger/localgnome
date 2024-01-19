@@ -12,7 +12,6 @@ const config: ForgeConfig = {
     asar: true,
     osxSign: {}, // object must exist even if empty
     osxNotarize: {
-      tool: "notarytool",
       keychainProfile: "localgnome-notorization",
     },
     appBundleId: "dev.spalger.localgnome",

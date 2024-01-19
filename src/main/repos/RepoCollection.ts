@@ -68,10 +68,12 @@ export class RepoCollection {
                     }
 
                     for (const ent of dirEntsOrState) {
-                      if (
-                        !ent.isDirectory() ||
-                        !Fs.existsSync(Path.resolve(ent.path, ".git"))
-                      ) {
+                      if (!ent.isDirectory()) {
+                        continue;
+                      }
+
+                      const gitPath = Path.resolve(reposDir, ent.name, ".git");
+                      if (!Fs.existsSync(gitPath)) {
                         continue;
                       }
 
