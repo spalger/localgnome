@@ -130,7 +130,9 @@ export class Repo {
         Rx.map((remotes) =>
           remotes.some((remote) => remote.name === "upstream")
             ? "upstream"
-            : "origin"
+            : remotes.some((remote) => remote.name === "origin")
+            ? "origin"
+            : undefined
         )
       )
     );
@@ -180,7 +182,8 @@ export class Repo {
               } catch (_) {
                 const error = toError(_);
                 if (
-                  error.message.includes("Permission denied") &&
+                  (error.message.includes("Permission denied") ||
+                    error.message.includes("Repository not found")) &&
                   error.message.includes(
                     "Could not read from remote repository"
                   )
